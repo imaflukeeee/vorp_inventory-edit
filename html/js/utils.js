@@ -159,7 +159,6 @@ function initiateSecondaryInventory(title, capacity, weight) {
     }
 }
 
-
 // (ฟังก์ชันเดิม - ไม่แก้ไข)
 function initDivMouseOver() {
     if (isOpen === true) {
@@ -179,6 +178,7 @@ function initDivMouseOver() {
         };
     }
 }
+
 function Interval(time) {
     var timer = false;
     this.start = function () {
@@ -188,6 +188,7 @@ function Interval(time) {
     this.stop = function () { clearInterval(timer); timer = false; };
     this.isRunning = function () { return timer !== false; };
 }
+
 function disableInventory(ms) {
     disabled = true;
     if (disabledFunction === null) {
@@ -198,6 +199,7 @@ function disableInventory(ms) {
         disabledFunction.start();
     }
 }
+
 function validatePlayerSelection(player) {
     const data = objToGive;
     secureCallbackToNui("vorp_inventory", "GiveItem", {
@@ -208,6 +210,7 @@ function validatePlayerSelection(player) {
     $("#character-selection").hide();
     objToGive = {};
 }
+
 function selectPlayerToGive(data) {
     $("#disabler").show();
     objToGive = {};
@@ -225,12 +228,12 @@ function selectPlayerToGive(data) {
     });
     $("#character-selection").show();
 }
+
 function closeCharacterSelection() {
     objToGive = {};
     $("#disabler").hide();
     $("#character-selection").hide();
 }
-// ... (โค้ดส่วนบนของไฟล์เดิม)
 
 function dropGetHowMany(item, type, hash, id, metadata, count, degradation) {
     if (type != "item_weapon") {
@@ -248,7 +251,7 @@ function dropGetHowMany(item, type, hash, id, metadata, count, degradation) {
                 item: item, 
                 type: type,
                 maxValue: maxValue,
-                input: { type: "number", autofocus: "true", value: maxValue ? maxValue : "" },
+                input: { type: "number", autofocus: "true", value: "0" },
                 validate: function (value, item, type) {
                     if (!value || value <= 0) { dialog.close(); return; }
                     if (type !== "item_money" && type !== "item_gold") { if (!isInt(value)) { return; } }
@@ -265,6 +268,7 @@ function dropGetHowMany(item, type, hash, id, metadata, count, degradation) {
         });
     }
 }
+
 function giveGetHowMany(item, type, hash, id, metadata, count) {
     if (type != "item_weapon") {
         if (count > 1) {
@@ -276,7 +280,7 @@ function giveGetHowMany(item, type, hash, id, metadata, count) {
                 item: item, 
                 type: type,
                 maxValue: maxValue,
-                input: { type: "number", autofocus: "true", value: maxValue ? maxValue : "" },
+                input: { type: "number", autofocus: "true", value: "0" },
                 validate: function (value, item, type) {
                     if (!value || value <= 0) { dialog.close(); return; }
                     if (!isInt(value)) { dialog.close(); return; }
@@ -300,6 +304,7 @@ function giveGetHowMany(item, type, hash, id, metadata, count) {
         );
     }
 }
+
 function giveGetHowManyMoney() {
     // Read the current cash amount from the UI
     const moneyString = $("#money-value").text().replace(/,/g, "");
@@ -312,7 +317,7 @@ function giveGetHowManyMoney() {
         item: "money", 
         type: "item_money",
         maxValue: maxValue,
-        input: { type: "number", autofocus: "true", value: maxValue ? maxValue : "" },
+        input: { type: "number", autofocus: "true", value: "0" },
         validate: function (value, item, type) {
             const parsedValue = parseFloat(value);
             if (!value || parsedValue <= 0) { dialog.close(); return; }
@@ -350,7 +355,7 @@ function giveGetHowManyGold() {
         item: "gold", 
         type: "item_gold",
         maxValue: maxValue,
-        input: { type: "number", autofocus: "true", value: maxValue ? maxValue : "" },
+        input: { type: "number", autofocus: "true", value: "0" },
         validate: function (value, item, type) {
             const parsedValue = parseFloat(value);
             if (!value || parsedValue <= 0) { dialog.close(); return; }

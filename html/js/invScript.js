@@ -233,7 +233,7 @@ function loadInventoryItem(item, index) {
     let qtyDisplay = "";
     if (item.type == "item_weapon") {
         qtyDisplay = "x1";
-    } else if (limit > 1) { // Stackable
+    } else if (limit > 0) { // Stackable
         qtyDisplay = `${count} / ${limit}`;
     } else if (count > 1) { // Non-stackable
         qtyDisplay = `x${count}`;

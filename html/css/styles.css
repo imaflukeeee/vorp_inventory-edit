@@ -1,13 +1,7 @@
-/* =================================
-   VORP INVENTORY - GLASS UI REDESIGN
-   (Update: 11/13/2025 00.40)
-   ================================= */
-
-/* --- 1. FONTS & GLOBAL RESETS --- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --font-main: "Inter", sans-serif;
+  --font-main: "Kanit", sans-serif;
   --bg-glass: rgba(20, 20, 20, 0.92);
   --bg-dark: #0A0A0A;
   --bg-card: rgba(255, 255, 255, 0.03); 
@@ -108,7 +102,7 @@ body {
 }
 .currency-item {
   margin-top: 13px; 
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-main);
   cursor: pointer;
@@ -122,8 +116,8 @@ body {
 #gold { color: #FFD700; } 
 
 .currency-info .player-id {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 400;
     color: var(--text-dim);
     margin-right: 10px; 
     border-right: 1px solid var(--border-color);
