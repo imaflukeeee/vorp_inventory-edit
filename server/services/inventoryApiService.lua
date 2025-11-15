@@ -598,7 +598,6 @@ function InventoryAPI.subItemID(player, id, cb, allow, amount)
 	amount = amount or 1
 	item:quitCount(amount)
 	local itemName = item:getName()
-	local itemMetadata = item:getMetadata()
 
 	if item:getCount() == 0 then
 		DBService.DeleteItem(charIdentifier, item:getId())
@@ -610,7 +609,7 @@ function InventoryAPI.subItemID(player, id, cb, allow, amount)
 	end
 
 	if not allow then
-		local data = { name = itemName, count = amount, metadata = itemMetadata }
+		local data = { name = itemName, count = amount }
 		TriggerEvent("vorp_inventory:Server:OnItemRemoved", data, _source)
 	end
 	return respond(cb, true)
@@ -658,7 +657,6 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 		end
 
 		local itemName <const> = itemFound:getName()
-		local itemMetadata <const> = itemFound:getMetadata()
 
 		itemFound:quitCount(amount)
 		TriggerClientEvent("vorpCoreClient:subItem", _source, itemFound:getId(), itemFound:getCount())
@@ -670,7 +668,7 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 		end
 
 		if not allow then
-			local data <const> = { name = itemName, count = amount, metadata = itemMetadata }
+			local data <const> = { name = itemName, count = amount }
 			TriggerEvent("vorp_inventory:Server:OnItemRemoved", data, _source)
 		end
 		return respond(cb, true)
@@ -717,7 +715,6 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 	if exactMatchItem then
 		-- if an exact match is found, use this instance
 		local itemName <const> = exactMatchItem:getName()
-		local itemMetadata <const> = exactMatchItem:getMetadata()
 		exactMatchItem:quitCount(amount)
 		TriggerClientEvent("vorpCoreClient:subItem", _source, exactMatchItem:getId(), exactMatchItem:getCount())
 		if exactMatchItem:getCount() == 0 then
@@ -728,7 +725,7 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 		end
 
 		if not allow then
-			local data <const> = { name = itemName, count = amount, metadata = itemMetadata }
+			local data <const> = { name = itemName, count = amount }
 			TriggerEvent("vorp_inventory:Server:OnItemRemoved", data, _source)
 		end
 	else
@@ -744,9 +741,8 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 			-- in here we can add a condition to only get items expired or not expired? but this would cause issues if you get the amount of items and not selecting expired or not expired, because what if there is amount needed but not enough as expired or not expired.
 			local countAvailable <const> = item:getCount()
 			local removeCount <const> = math.min(countAvailable, totalNeeded)
-			local itemMetadata <const> = item:getMetadata()
 
-			table.insert(itemsToRemove, { item = item, count = removeCount, metadata = itemMetadata })
+			table.insert(itemsToRemove, { item = item, count = removeCount })
 			totalNeeded = totalNeeded - removeCount
 		end
 
@@ -759,8 +755,6 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 		for _, value in ipairs(itemsToRemove) do
 			local item <const> = value.item
 			local removeCount <const> = value.count
-			local itemName <const> = item:getName()
-			local itemMetadata <const> = item:getMetadata()
 
 			item:quitCount(removeCount)
 			TriggerClientEvent("vorpCoreClient:subItem", _source, item:getId(), item:getCount())
@@ -770,11 +764,12 @@ function InventoryAPI.subItem(source, name, amount, metadata, cb, allow, percent
 			else
 				DBService.SetItemAmount(sourceCharacter.charIdentifier, item:getId(), item:getCount())
 			end
-			if not allow then
-				-- allow other scripts to detect the item removal and its amount, (count) was added
-				local data <const> = { name = itemName, count = removeCount, metadata = itemMetadata }
-				TriggerEvent("vorp_inventory:Server:OnItemRemoved", data, _source)
-			end
+		end
+
+		if not allow then
+			-- allow other scripts to detect the item removal and its amount, (count) was added, but id and metadata was removed because there could be multiple stacks with the same name with diferent metadata so we cant send these
+			local data <const> = { name = name, count = amount }
+			TriggerEvent("vorp_inventory:Server:OnItemRemoved", data, _source)
 		end
 	end
 	return respond(cb, true)

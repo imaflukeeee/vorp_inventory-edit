@@ -1,8 +1,12 @@
+/* =================================
+  SECONDARY INVENTORY SCRIPT (MODIFIED)
+  =================================
+*/
+
+// (Logic เดิม - ใช้สำหรับส่งข้อมูลกลับไป LUA)
 function PostActionPostQty(eventName, itemData, id, propertyName, qty, info) {
     if (isValidating) return;
-
     processEventValidation();
-
     $.post(`https://${GetParentResourceName()}/${eventName}`,
         JSON.stringify({
             item: itemData,
@@ -12,46 +16,34 @@ function PostActionPostQty(eventName, itemData, id, propertyName, qty, info) {
             info: info
         })
     );
-
 }
 
+// (Logic เดิม - ตรวจสอบ Shift Key)
 let isShiftActive = false
+document.onkeydown = function (e) { isShiftActive = e.shiftKey };
+document.onkeyup = function (e) { isShiftActive = e.shiftKey };
 
-document.onkeydown = function (e) {
-    isShiftActive = e.shiftKey
-};
-
-document.onkeyup = function (e) {
-    isShiftActive = e.shiftKey
-};
-
+// (Logic เดิม - จัดการการย้าย/ดึง ไอเท็ม)
 function PostAction(eventName, itemData, id, propertyName, info) {
     disableInventory(500);
     if (itemData.type != "item_weapon") {
-
         if (itemData.count === 1 || isShiftActive === true) {
             let qty = (isShiftActive) ? itemData.count : 1;
             PostActionPostQty(eventName, itemData, id, propertyName, qty, info);
             return;
         }
-
         dialog.prompt({
             title: LANGUAGE.prompttitle,
             button: LANGUAGE.promptaccept,
             required: true,
             item: itemData,
             type: itemData.type,
-            input: {
-                type: "number",
-                autofocus: "true",
-            },
-
+            input: { type: "number", autofocus: "true" },
             validate: function (value, item, type) {
                 if (!value || value <= 0 || value > Config.MaxItemTransferAmount || !isInt(value)) {
                     $.post(`https://${GetParentResourceName()}/TransferLimitExceeded`, JSON.stringify({
                         max: Config.MaxItemTransferAmount
                     }));
-                                    
                     dialog.close();
                 } else {
                     PostActionPostQty(eventName, itemData, id, propertyName, value, info);
@@ -62,6 +54,8 @@ function PostAction(eventName, itemData, id, propertyName, info) {
         PostActionPostQty(eventName, itemData, id, propertyName, 1, info);
     }
 }
+
+// (Logic เดิม - ไม่แก้ไข)
 const ActionTakeList = {
     custom: { action: "TakeFromCustom", id: () => customId, customtype: "id" },
     player: { action: "TakeFromPlayer", id: () => playerId, customtype: "player" },
@@ -74,7 +68,6 @@ const ActionTakeList = {
     Container: { action: "TakeFromContainer", id: () => Containerid, customtype: "Container" },
     horse: { action: "TakeFromHorse", id: () => horseid, customtype: "horse" },
 };
-
 const ActionMoveList = {
     custom: { action: "MoveToCustom", id: () => customId, customtype: "id" },
     player: { action: "MoveToPlayer", id: () => playerId, customtype: "player" },
@@ -87,34 +80,29 @@ const ActionMoveList = {
     Container: { action: "MoveToContainer", id: () => Containerid, customtype: "Container" },
     horse: { action: "MoveToHorse", id: () => horseid, customtype: "horse" },
 };
-
-
 function takeFromStoreWithPrice(itemData, qty) {
-
     if (isValidating) return;
-
     processEventValidation();
-
-    $.post(`https://${GetParentResourceName()}/TakeFromStore`,
-        JSON.stringify({
-            item: itemData,
-            type: itemData.type,
-            number: qty,
-            price: itemData.price,
-            geninfo: geninfo,
-            store: StoreId,
-        })
-    );
+    $.post(`https://${GetParentResourceName()}/TakeFromStore`, JSON.stringify({
+        item: itemData, type: itemData.type, number: qty, price: itemData.price, geninfo: geninfo, store: StoreId,
+    }));
 }
+// (สิ้นสุด Logic เดิม - ไม่แก้ไข)
 
+
+/**
+ * [MODIFIED] ฟังก์ชันนี้จะจัดการการ "วาง" ไอเท็มลงในหน้าต่าง
+ */
 function initSecondaryInventoryHandlers() {
+    
+    // Logic Droppable ของหน้าต่างหลัก
     $("#inventoryElement").droppable({
         drop: function (_, ui) {
             itemData = ui.draggable.data("item");
             itemInventory = ui.draggable.data("inventory");
             var info = $("#secondInventoryElement").data("info");
 
-            if (itemInventory === "second") {
+            if (itemInventory === "second") { 
                 if (type in ActionTakeList) {
                     const { action, id, customtype } = ActionTakeList[type];
                     const Id = id();
@@ -122,34 +110,17 @@ function initSecondaryInventoryHandlers() {
                 } else if (type === "store") {
                     disableInventory(500);
                     if (itemData.type != "item_weapon") {
-
                         if (itemData.count === 1 || isShiftActive === true) {
                             let qty = (isShiftActive) ? itemData.count : 1;
                             takeFromStoreWithPrice(itemData, qty);
                             return;
                         }
-
                         dialog.prompt({
-                            title: LANGUAGE.prompttitle,
-                            button: LANGUAGE.promptaccept,
-                            required: true,
-                            item: itemData,
-                            type: itemData.type,
-                            input: {
-                                type: "number",
-                                autofocus: "true",
-                            },
-
+                            title: LANGUAGE.prompttitle, button: LANGUAGE.promptaccept, required: true, item: itemData, type: itemData.type,
+                            input: { type: "number", autofocus: "true" },
                             validate: function (value) {
-                                if (!value) {
-                                    dialog.close();
-                                    return;
-                                }
-
-                                if (!isInt(value)) {
-                                    return;
-                                }
-
+                                if (!value) { dialog.close(); return; }
+                                if (!isInt(value)) { return; }
                                 takeFromStoreWithPrice(itemData, value);
                             },
                         });
@@ -162,130 +133,66 @@ function initSecondaryInventoryHandlers() {
         },
     });
 
-
+    // (Logic เดิม)
     function moveToStore(itemData, qty) {
-
         if (isValidating) return;
-
         processEventValidation();
-
-        $.post(`https://${GetParentResourceName()}/MoveToStore`,
-            JSON.stringify({
-                item: itemData,
-                type: itemData.type,
-                number: qty,
-                geninfo: geninfo,
-                store: StoreId,
-            })
-        );
+        $.post(`https://${GetParentResourceName()}/MoveToStore`, JSON.stringify({
+            item: itemData, type: itemData.type, number: qty, geninfo: geninfo, store: StoreId,
+        }));
     }
-
     function moveToStoreWithPrice(itemData, qty, price) {
-
         if (isValidating) return;
-
         processEventValidation();
-
-        $.post(`https://${GetParentResourceName()}/MoveToStore`,
-            JSON.stringify({
-                item: itemData,
-                type: itemData.type,
-                number: qty,
-                price: price,
-                geninfo: geninfo,
-                store: StoreId,
-            })
-        );
+        $.post(`https://${GetParentResourceName()}/MoveToStore`, JSON.stringify({
+            item: itemData, type: itemData.type, number: qty, price: price, geninfo: geninfo, store: StoreId,
+        }));
     }
-
     function moveToStorePriceDialog(itemData, qty) {
-
         if (isValidating) return;
-
         processEventValidation();
-
         dialog.prompt({
-            title: LANGUAGE.prompttitle2,
-            button: LANGUAGE.promptaccept,
-            required: true,
-            item: itemData,
-            type: itemData.type,
-            input: {
-                type: "number",
-                autofocus: "true",
-            },
+            title: LANGUAGE.prompttitle2, button: LANGUAGE.promptaccept, required: true, item: itemData, type: itemData.type,
+            input: { type: "number", autofocus: "true" },
             validate: function (value2, item, type) {
-                if (!value2) {
-                    dialog.close();
-                    return;
-                }
-
+                if (!value2) { dialog.close(); return; }
                 moveToStoreWithPrice(itemData, qty, value2);
             },
         });
     }
 
+    // Logic Droppable ของหน้าต่างรอง
     $("#secondInventoryElement").droppable({
         drop: function (_, ui) {
             itemData = ui.draggable.data("item");
             itemInventory = ui.draggable.data("inventory");
             var info = $(this).data("info");
 
-            if (itemInventory === "main") {
+            if (itemInventory === "main") { 
                 if (type in ActionMoveList) {
                     const { action, id, customtype } = ActionMoveList[type];
                     const Id = id();
                     PostAction(action, itemData, Id, customtype, info);
                 } else if (type === "store") {
                     disableInventory(500);
-
-                    // this action is different than all the others
                     if (itemData.type != "item_weapon") {
-
                         if (itemData.count === 1 || isShiftActive === true) {
                             let qty = (isShiftActive) ? itemData.count : 1;
-                            if (geninfo.isowner != 0) {
-                                moveToStorePriceDialog(itemData, qty);
-                            } else {
-                                moveToStore(itemData, qty);
-                            }
+                            if (geninfo.isowner != 0) { moveToStorePriceDialog(itemData, qty); } else { moveToStore(itemData, qty); }
                             return;
                         }
-
                         dialog.prompt({
-                            title: LANGUAGE.prompttitle,
-                            button: LANGUAGE.promptaccept,
-                            required: true,
-                            item: itemData,
-                            type: itemData.type,
-                            input: {
-                                type: "number",
-                                autofocus: "true",
-                            },
+                            title: LANGUAGE.prompttitle, button: LANGUAGE.promptaccept, required: true, item: itemData, type: itemData.type,
+                            input: { type: "number", autofocus: "true" },
                             validate: function (value, item, type) {
-                                if (!value) {
-                                    dialog.close();
-                                    return;
-                                }
-
-                                if (!isInt(value)) {
-                                    return;
-                                }
-
-                                if (geninfo.isowner != 0) {
-                                    moveToStorePriceDialog(itemData, value);
-                                } else {
-                                    moveToStore(itemData, value);
-                                }
+                                if (!value) { dialog.close(); return; }
+                                if (!isInt(value)) { return; }
+                                if (geninfo.isowner != 0) { moveToStorePriceDialog(itemData, value); } else { moveToStore(itemData, value); }
                             },
                         });
                     } else {
                         let qty = 1;
-                        if (geninfo.isowner != 0) {
-                            moveToStorePriceDialog(itemData, qty);
-                        } else {
-                            moveToStore(itemData, qty);
-                        }
+                        if (geninfo.isowner != 0) { moveToStorePriceDialog(itemData, qty); } else { moveToStore(itemData, qty); }
                     }
                 }
             }
@@ -294,92 +201,120 @@ function initSecondaryInventoryHandlers() {
 }
 
 /**
- *  set up mouse events for the item
- * @param {object} item 
- * @param {number} index 
+ * [MODIFIED] ผูก Event ให้ไอเท็ม (หน้าต่างรอง)
  */
 function addDataToCustomInv(item, index) {
-    $("#item-" + index).data("item", item);
-    $("#item-" + index).data("inventory", "second");
+    const itemElement = $("#item-" + index);
 
-    const itemElement = document.getElementById(`item-${index}`);
+    itemElement.data("item", item);
+    itemElement.data("inventory", "second"); 
 
-    itemElement.addEventListener('mouseenter', () => {
-        const { label, description } = getItemMetadataInfo(item);
+    // [REMOVED] (ข้อ 1) ลบ on('mouseenter') ออก
+    /*
+    itemElement.on('mouseenter', () => {
+        // ...
+    });
+    */
+
+    itemElement.on('mouseleave', () => {
+        /* ไม่ต้องลบออก */
+    });
+
+    // [MODIFIED] (ข้อ 1 & 2)
+    itemElement.on('click', function() {
+        $('#secondInventoryHud .item-card').removeClass('active');
+        $(this).addClass('active');
+
+        // [MODIFIED] (ข้อ 2) เพิ่ม Serial Number ลงใน Description
+        let { label, description } = getItemMetadataInfo(item, true); // true = custom
+        if (item.type == "item_weapon" && item.serial_number) {
+            description += `<br><span class="serial-number">Serial: ${item.serial_number}</span>`;
+        }
+        
         OverSetTitleSecond(label);
         OverSetDescSecond(description);
+        
+        $("#action-buttons").empty();
+        $('#inventoryHud .item-card').removeClass('active');
     });
-
-    itemElement.addEventListener('mouseleave', () => {
-        OverSetTitleSecond(" ");
-        OverSetDescSecond(" ");
-    });
-
 }
 
 /**
- * Get the degradation percentage 
- * @param {Object} item - The item object
- * @returns {string}
+ * [ADD-REVISED] (แก้ Bug "ไม่เห็นไอเท็ม") เพิ่มฟังก์ชันที่ขาดหายไป
  */
 function getDegradationCustom(item) {
-
-    if (item.type === "item_weapon" || item.maxDegradation === 0 || item.degradation === undefined || item.degradation === null || item.percentage === undefined || item.percentage === null) return "";
+    if (item.type === "item_weapon" || item.degradation === undefined || item.degradation === null || item.percentage === undefined || item.percentage === null) return "";
     const degradationPercentage = item.percentage
-    const color = getColorForDegradation(degradationPercentage);
+    const color = getColorForDegradation(degradationPercentage); // (ฟังก์ชันนี้อยู่ใน utils.js)
     return `<br>${LANGUAGE.labels.decay}<span style="color: ${color}">${degradationPercentage.toFixed(0)}%</span>`;
 }
 
 
-function loadCustomInventoryItems(item, index, group, count, limit) {
-    if (item.type === "item_weapon") return;
+/**
+ * [MODIFIED] สร้างไอเท็ม 1 ชิ้น (สำหรับหน้าต่างรอง) (ข้อ 5, 6, 7, 9)
+ * @returns {boolean} - คืนค่า true (สำหรับนับจำนวน)
+ */
+function loadCustomInventoryItem(item, index) {
+    const count = item.count;
+    const limit = item.limit; // [MODIFIED] (ข้อ 7)
+    const group = item.type != "item_weapon" ? (!item.group ? 1 : item.group) : 5;
 
-    const { tooltipData, degradation, image, label, weight } = getItemMetadataInfo(item, true);
-    const itemWeight = getItemWeight(weight, 1);
-    const groupKey = getGroupKey(group);
-    const { tooltipContent, url } = getItemTooltipContent(image, groupKey, group, limit, itemWeight, degradation, tooltipData);
+    const { tooltipData, degradation, image, label, weight, description } = getItemMetadataInfo(item, true); // true = custom
+    
+    const imageUrl = imageCache[image] || 'img/items/placeholder.png';
+    // const itemWeight = (weight * count).toFixed(2); // [REMOVED] (ข้อ 6)
 
-    $("#secondInventoryElement").append(`<div data-label='${label}' data-group ='${group}' style='background-image: ${url} background-size: 4.5vw 7.7vh; background-repeat: no-repeat; background-position: center;' id="item-${index}"  class='item' class='item' data-tooltip='${tooltipContent}'> ${count > 0 ? `<div class='count'>${count}</div>` : ``} </div>`);
+    // [MODIFIED] (ข้อ 7 & 9) - เพิ่มการแสดง 'x1' สำหรับอาวุธ
+    let qtyDisplay = "";
+    if (item.type == "item_weapon") {
+        qtyDisplay = "x1";
+    } else if (limit > 1) { // Stackable
+        qtyDisplay = `${count} / ${limit}`;
+    } else if (count > 1) { // Non-stackable
+        qtyDisplay = `x${count}`;
+    }
+    // ถ้า count <= 1 (สำหรับ item ทั่วไป) qtyDisplay จะยังคงเป็น "" (ไม่แสดงผล)
 
+    // [MODIFIED] (ข้อ 5, 6, 7, 9)
+    const itemHtml = `
+        <div class="item-card" id="item-${index}" data-group='${group}' data-label='${label}' data-inventory="second">
+            <img src="${imageUrl}" alt="${label}" onerror="fallbackImg(this)">
+            <p class="item-name">${label}</p>
+            ${qtyDisplay ? `<p class="item-qty">${qtyDisplay}</p>` : ""}
+            </div>
+    `;
+    
+    $("#secondInventoryElement").append(itemHtml);
+
+    // ผูก Data
+    addDataToCustomInv(item, index);
+    return true; // [FIX] คืนค่า true
 }
 
-function loadCustomInventoryItemsWeapons(item, index, group) {
-    if (item.type != "item_weapon") return;
-
-    const info = item.serial_number ? "<br>" + LANGUAGE.labels.ammo + item.count + "<br>" + LANGUAGE.labels.serial + item.serial_number : "";
-    const weight = getItemWeight(item.weight, item.count);
-    const url = imageCache[item.name]
-
-    $("#secondInventoryElement").append(`<div data-label='${item.label}' data-group ='${group}'
-    style='background-image: ${url} background-size: 4.5vw 7.7vh; background-repeat: no-repeat; background-position: center;' id='item-${index}' class='item' data-tooltip="${weight + info}"></div>`);
-
-}
-
+/**
+ * [MODIFIED] ฟังก์ชันหลักในการวาด Inventory (หน้าต่างรอง)
+ */
 function secondInventorySetup(items, info) {
-    $("#inventoryElement").html("");
     $("#secondInventoryElement").html("").data("info", info);
-    var divCount = 0;
+    var divCount = 0; // [FIX] รีเซ็ตตัวนับ
 
     if (items.length > 0) {
-        $.each(items, function () {
-            divCount = divCount + 1;
-        });
-
+        // [FIX] แก้ไข Logic การนับ
         for (const [index, item] of items.entries()) {
-            count = item.count;
-            const group = item.type != "item_weapon" ? !item.group ? 1 : item.group : 5;
-            const limit = item.limit;
-            loadCustomInventoryItems(item, index, group, count, limit);
-            loadCustomInventoryItemsWeapons(item, index, group);
-            addDataToCustomInv(item, index);
+            if (item) { // [FIX] ตรวจสอบว่า item ไม่ใช่ nil
+                if (loadCustomInventoryItem(item, index)) { // [FIX] เรียกใช้ฟังก์ชันวาด .item-card ใหม่
+                    divCount++;
+                }
+            }
         };
     }
 
-    /* in here we ensure that at least all divs are filled */
-    if (divCount < 14) {
-        var emptySlots = 16 - divCount;
+    // [MODIFIED] เติมช่องว่าง (ตามที่คุณต้องการ)
+    const minSlots = 40; // [MODIFIED] เปลี่ยนจาก 60 (ไฟล์เก่า) เป็น 40 (ตามที่เคยทำ)
+    if (divCount < minSlots) {
+        var emptySlots = minSlots - divCount;
         for (var i = 0; i < emptySlots; i++) {
-            $("#secondInventoryElement").append(`<div class='item' data-group='0'></div>`);
+            $("#secondInventoryElement").append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
         }
     }
 }

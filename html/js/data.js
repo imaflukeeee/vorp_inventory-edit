@@ -3,8 +3,9 @@ let type = "normal";
 let disabled = false;
 let disabledFunction = null;
 let ready4Action = true;
-let checkxy;
-let infoxy;
+// [REMOVED] checkxy และ infoxy ไม่ได้ถูกใช้ใน script.js (ใหม่) แล้ว
+// let checkxy; 
+// let infoxy;
 let Weight = null;
 let customId = 0;
 let houseId = 0;

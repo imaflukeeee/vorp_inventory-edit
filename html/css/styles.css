@@ -1,0 +1,665 @@
+/* =================================
+   VORP INVENTORY - GLASS UI REDESIGN
+   (Update: 11/13/2025 00.40)
+   ================================= */
+
+/* --- 1. FONTS & GLOBAL RESETS --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-main: "Inter", sans-serif;
+  --bg-glass: rgba(20, 20, 20, 0.92);
+  --bg-dark: #0A0A0A;
+  --bg-card: rgba(255, 255, 255, 0.03); 
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-color-hover: rgba(255, 255, 255, 0.4);
+  --text-main: #f0f0f0;
+  --text-dim: #999;
+  --text-muted: #666;
+  --primary-accent: #ffffff; 
+  --transition: 0.2s ease-in-out;
+  --border-radius: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: var(--font-main);
+  color: var(--text-main);
+  user-select: none;
+}
+
+body {
+  overflow: hidden;
+  background-color: transparent; 
+}
+
+/* --- 2. INVENTORY CONTAINER (Glassmorphism) --- */
+.inventory-container {
+  width: 45%;
+  max-width: 900px;
+  min-width: 600px; 
+  position: absolute;
+  top: 50%;
+  
+  background: var(--bg-glass);
+  /*backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%); */
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+}
+
+#inventoryHud {
+  left: 3%;
+  transform: translateY(-50%);
+  display: none; 
+}
+#secondInventoryHud {
+  right: 3%;
+  transform: translateY(-50%);
+  display: none; 
+}
+
+/* --- 3. HEADER & PLAYER INFO --- */
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 20px;
+}
+
+.inventory-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--text-main);
+  margin-top: 5px; 
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px; 
+  text-align: right;
+}
+
+.player-id {
+  margin-top: 12px; 
+  font-size: 14px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.currency-info {
+  display: flex;
+  gap: 15px;
+  align-items: center; 
+}
+.currency-item {
+  margin-top: 13px; 
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.currency-item:hover {
+  transform: scale(1.05);
+  opacity: 0.8;
+}
+#cash { color: #4CAF50; } 
+#gold { color: #FFD700; } 
+
+.currency-info .player-id {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-right: 10px; 
+    border-right: 1px solid var(--border-color);
+    padding-right: 15px;
+}
+
+
+/* --- 4. TABS (Filter) --- */
+.inventory-tabs {
+  display: flex;
+  flex-wrap: wrap; 
+  gap: 15px; 
+  margin-bottom: 20px;
+  justify-content: center; 
+}
+
+.tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  width: 50px; 
+  height: 50px;
+  padding: 8px; 
+  border-radius: 10px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex; 
+  align-items: center;
+  justify-content: center;
+}
+
+.tab img {
+    width: 70%; 
+    height: 70%;
+    object-fit: contain;
+    filter: invert(0.7); 
+    transition: var(--transition);
+    pointer-events: none; 
+}
+
+.tab:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+}
+
+.tab:hover img {
+    filter: invert(1); 
+    transform: scale(1.1);
+}
+
+.tab.active {
+  background: var(--primary-accent);
+  color: #000;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+  border-color: var(--primary-accent);
+}
+
+.tab.active img {
+    filter: invert(0); 
+    transform: scale(1);
+}
+
+
+/* --- 5. ITEM GRID & SCROLLBAR --- */
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); 
+  gap: 15px; 
+  min-height: 480px; 
+  max-height: 480px; 
+  overflow-y: auto;
+  padding: 5px; 
+}
+
+.inventory-grid::-webkit-scrollbar { width: 8px; }
+.inventory-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
+.inventory-grid::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+.inventory-grid::-webkit-scrollbar-thumb:hover { background: var(--border-color-hover); }
+
+/* --- 6. ITEM CARD (Glassmorphism) --- */
+.item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  aspect-ratio: 1 / 1; 
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* [MODIFIED] (ข้อ 1) เปลี่ยนจาก center เป็น flex-start */
+  align-items: center;
+}
+
+.item-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.item-card.ui-draggable-dragging {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  opacity: 0.7;
+  transform: scale(1.05) translateY(-2px);
+}
+
+
+
+.item-card.active { 
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), inset 0 0 5px rgba(255, 255, 255, 0.1);
+}
+
+.item-card .equipped-icon {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 20px;
+    height: 20px;
+    background-image: url(../img/weaponused.png); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,1));
+    z-index: 2;
+}
+
+.item-card img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain; 
+  opacity: 0.9;
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
+  pointer-events: none; 
+}
+
+/* [MODIFIED] (ข้อ 8) - ซ่อนชื่อไอเท็ม */
+.item-name {
+  display: none; /* ซ่อนชื่อไอเท็ม */
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: normal; 
+  word-break: break-word; 
+  overflow: hidden;
+  height: 30px; 
+  line-height: 1.2;
+  width: 100%;
+}
+
+/* [MODIFIED] (ข้อ 5) - ย้ายจำนวนไอเท็มมาแทนที่ชื่อ */
+.item-qty {
+  position: relative; 
+  bottom: auto;
+  right: auto;
+
+  /* ใช้ Style ของ .item-name เดิม เพื่อขยับขึ้นไปแทนที่ */
+  margin-top: 8px; 
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main); /* เปลี่ยนจากสีเทา (text-dim) เป็นสีขาว (text-main) */
+  width: 100%;
+
+  /* ลบเงาและ margin-top เดิมออก */
+  /* text-shadow: 0 0 5px rgba(0,0,0,0.7); */
+  /* margin-top: 4px; */
+}
+
+/* [MODIFIED] (ข้อ 6) ซ่อนน้ำหนัก */
+.item-weight {
+  display: none; 
+}
+
+
+/* --- 7. FOOTER --- */
+/* [MODIFIED] (ข้อ 4) จัด Footer ใหม่ */
+.inventory-footer {
+  margin-top: 25px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+    /* gap: 20px; */ /* <-- ลบอันนี้ */
+  column-gap: 20px; /* [FIX] ช่องว่าง ซ้าย-ขวา */
+  row-gap: 1px;     /* [FIX] ช่องว่าง บน-ล่าง (แก้เป็น 5px ตามที่คุณต้องการ) */
+  flex-wrap: wrap;
+  position: relative; 
+}
+
+.item-info {
+  flex-basis: 300px;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.item-info h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 5px;
+  word-wrap: break-word;
+  height: 24px; 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-info p {
+  font-size: 14px;
+  color: var(--text-dim);
+  word-wrap: break-word;
+  height: 42px; /* 3 บรรทัด */
+  overflow: hidden; 
+  line-height: 1.4;
+}
+
+/* [NEW] Style สำหรับ Serial Number */
+.item-info p .serial-number {
+    display: block; 
+    margin-top: 5px;
+    color: var(--text-main); 
+    font-size: 13px;
+    font-weight: 500;
+}
+
+
+/* [MODIFIED] (ข้อ 4) ย้ายไปตรงกลาง */
+.footer-widgets {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  /* [NEW] (ข้อ 4) จัดให้อยู่ตรงกลาง (Absolute Center) */
+  position: absolute;
+  left: 50%;
+  bottom: 25px; /* Match footer padding */
+  transform: translateX(-50%);
+}
+
+/* [REMOVED] (ข้อ 10) ซ่อนส่วนน้ำหนัก */
+.weight-section {
+  display: none;
+}
+.weight-bar { display: none; }
+.weight-progress { display: none; }
+
+
+/* กระสุน (Ammo) */
+.ammo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-card);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.ammo-section:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+}
+.ammo-section img {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
+  opacity: 0.7;
+}
+
+/* [MODIFIED] (ข้อ 4) ย้ายไปทางขวา */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-left: auto; 
+}
+
+.btn {
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition);
+  font-size: 14px;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--border-color-hover);
+  transform: translateY(-1px);
+}
+
+.btn.primary {
+  background: var(--primary-accent);
+  color: #000;
+  border-color: var(--primary-accent);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  background: #e0e0e0;
+  border-color: #e0e0e0;
+}
+
+/* --- 8. VORP UI (Re-styled) --- */
+#hint, #disabler { display: none; }
+
+/* หน้าต่าง "Give Item" */
+#character-selection {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: var(--bg-glass);
+    /*backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);*/
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    z-index: 1000;
+    color: var(--text-main);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+#character-select-title {
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+}
+#character-list {
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px; 
+}
+#character-list::-webkit-scrollbar { width: 6px; }
+#character-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 5px; }
+#character-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; }
+
+#character-list .list-item {
+    padding: 12px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+#character-list .list-item:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-color-hover);
+}
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.close-btn:hover {
+  color: var(--text-main);
+}
+
+/* หน้าต่าง Loading */
+#transaction-loader {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background: var(--bg-glass);
+    /*backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);*/
+    border: 1px solid var(--border-color);
+    height: 180px;
+    width: 200px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+#transaction-loader .wrap-model { height: 80px; width: 80px; position: absolute; padding: 10px; top: 35%; left: 50%; transform: translate(-50%, -35%); }
+#transaction-loader #loading-text { margin-top: 16px; text-align: center; color: var(--text-main); font-weight: 500; }
+#transaction-loader .revolver { height: 80px; width: 80px; border-radius: 50px; display: flex; justify-content: center; background: #ccc; transform: rotate(30deg); animation: rotateAnimation 6.5s cubic-bezier(0.74, 0.61, 0, 1.33) infinite; text-align: middle; position: relative; }
+#transaction-loader .revolver-part { height: 40px; width: 30px; border-radius: 5px; transform-origin: bottom center; position: absolute; display: flex; justify-content: center; }
+#transaction-loader .revolver-part:after, #transaction-loader .revolver-part:before { content: " "; display: block; background: #000000; height: 26px; width: 26px; border-radius: 13px; margin-top: -18px; }
+#transaction-loader .revolver-part:before { position: absolute; height: 12px; width: 12px; margin-top: 11px; right: -5px; background: #000000; border: 2px solid #000000; }
+#transaction-loader section:nth-of-type(1) { transform: rotateZ(calc(60deg * 1)); }
+#transaction-loader section:nth-of-type(2) { transform: rotateZ(calc(60deg * 2)); }
+#transaction-loader section:nth-of-type(3) { transform: rotateZ(calc(60deg * 3)); }
+#transaction-loader section:nth-of-type(4) { transform: rotateZ(calc(60deg * 4)); }
+#transaction-loader section:nth-of-type(5) { transform: rotateZ(calc(60deg * 5)); }
+#transaction-loader section:nth-of-type(6) { transform: rotateZ(calc(60deg * 6)); }
+@keyframes rotateAnimation { 0% { transform: rotate(30deg); } 16% { transform: rotate(90deg); } 32% { transform: rotate(150deg); } 48% { transform: rotate(210deg); } 64% { transform: rotate(270deg); } 82% { transform: rotate(330deg); } 100% { transform: rotate(390deg); } }
+
+
+/* [NEW] (ข้อ 2) Context Menu Style Overrides */
+.site-cm-box {
+    background: var(--bg-glass) !important;
+    /*backdrop-filter: blur(5px) saturate(120%);
+    -webkit-backdrop-filter: blur(5px) saturate(120%);*/
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    padding: 5px !important;
+    min-width: 150px; /* [NEW] (ข้อ 2) */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.site-cm-box ul.site-cm-group li {
+    color: var(--text-dim) !important;
+    line-height: 30px !important; /* [NEW] (ข้อ 2) */
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-main);
+    border-radius: 6px;
+    padding-left: 15px !important; /* [NEW] (ข้อ 2) */
+    padding-right: 15px !important; /* [NEW] (ข้อ 2) */
+}
+.site-cm-box .site-cm-separ {
+    display: none !important; /* [NEW] (ข้อ 2) */
+}
+.site-cm-box ul.site-cm-group li.hover, 
+.site-cm-box ul.site-cm-group li:hover {
+    color: var(--text-main) !important;
+    background-color: var(--bg-card-hover) !important;
+}
+
+/* --- [NEW] 9. แถบควบคุม (Tabs + Search) --- */
+
+.inventory-controls {
+    display: flex;
+    justify-content: space-between; /* จัด Tabs (ซ้าย) และ Search (ขวา) */
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* ย้าย Tabs ไปทางซ้าย */
+.inventory-tabs {
+    justify-content: flex-start; /* [FIX] เปลี่ยนจาก center เป็น flex-start */
+    margin-bottom: 0; /* ลบ margin เดิม */
+    flex-wrap: nowrap; /* ป้องกันการขึ้นบรรทัดใหม่ */
+    overflow-x: auto; /* ถ้า tab เยอะไปให้เลื่อนได้ */
+}
+
+/* แถบค้นหา (Search Bar) */
+.search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0 15px;
+    margin-left: 20px; /* เว้นระยะห่างจาก Tabs */
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 0;
+    width: 180px; /* กำหนดความกว้างแถบค้นหา */
+}
+.search-bar input::placeholder {
+    color: var(--text-dim);
+}
+
+
+/* --- [NEW] 10. แถบปรับ Opacity --- */
+.opacity-slider-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* [FIX] จัดชิดขวา */
+    gap: 10px; /* [NEW] เพิ่มช่องว่างระหว่าง Label กับ Slider */
+    width: 100%; /* [FIX] ขยายเต็มความกว้าง (ใต้ปุ่ม) */
+}
+
+.opacity-slider-container label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    white-space: nowrap; /* ป้องกัน "Opacity :" ตกบรรทัด */
+}
+
+/* --- WebKit (Chrome/Safari) --- */
+.opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--primary-accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg-glass);
+}
+
+/* --- Mozilla (Firefox) --- */
+.opacity-slider::-moz-range-track {
+    background: var(--bg-card-hover);
+    border-radius: 5px;
+    height: 6px;
+    border: none;
+}
+.opacity-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--primary-accent);
+    border-radius: 50%;
+    border: 2px solid var(--bg-glass);
+}
+
+.opacity-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 150px; /* [FIX] จำกัดความกว้างตัว Slider */
+    height: 6px;
+    background: var(--bg-card-hover);
+    border-radius: 5px;
+    outline: none;
+    transition: opacity .2s;
+    cursor: pointer;
+}

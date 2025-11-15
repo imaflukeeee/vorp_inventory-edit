@@ -1,34 +1,69 @@
 let imageCache = {};
 
 /**
- * Preload images
- * @param {Array} images - The array of images to preload so we can choose to display placeholder or not
+ * [MODIFIED] Preload images (ทำให้การโหลดรูปภาพมีความยืดหยุ่นมากขึ้น)
+ * @param {Array} images - The array of images to preload
  */
 function preloadImages(images) {
+    const promises = [];
 
     $.each(images, function (_, image) {
+        if (imageCache[image]) return; // Skip if already cached
+        
         const img = new Image();
-        img.onload = () => {
-            imageCache[image] = `url("img/items/${image}.png");`;
-        };
-        img.onerror = () => {
-            imageCache[image] = `url("img/items/placeholder.png");`;
-        };
-        img.src = `img/items/${image}.png`;
+        img.crossOrigin = "anonymous"; // ป้องกันปัญหา CORS
+
+        const promise = new Promise((resolve) => {
+            img.onload = () => {
+                // [FIX] เก็บ Path ตรงๆ แทน url()
+                imageCache[image] = `img/items/${image}.png`; 
+                resolve();
+            };
+            img.onerror = () => {
+                imageCache[image] = `img/items/placeholder.png`;
+                resolve();
+            };
+            
+            // ใช้ setTimeout เล็กน้อยเพื่อไม่ให้ main thread ถูกบล็อกนานเกินไป
+            setTimeout(() => {
+                img.src = `img/items/${image}.png`;
+            }, 0);
+        });
+        promises.push(promise);
     });
 
+    // ใช้ Promise.all เพื่อรอให้ทุกรูปถูกพยายามโหลด (สำเร็จ/ไม่สำเร็จ)
+    return Promise.all(promises);
 }
 
-/* DROP DOWN BUTTONS MAIN AND SECONDARY INVENTORY */
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.dropdownButton[data-type="clothing"], .dropdownButton1[data-type="clothing"]').forEach(button => {
-        button.classList.add('active');
-    });
-});
+
+// [ADD-REVISED] ฟังก์ชันที่ขาดหายไป (จำเป็นสำหรับ utils.js)
+function getItemDegradationPercentage(item) {
+    if (item.maxDegradation === 0) return 1;
+    const now = TIME_NOW
+    const maxDegradeSeconds = item.maxDegradation * 60;
+    const elapsedSeconds = now - item.degradation;
+    const degradationPercentage = Math.max(0, ((maxDegradeSeconds - elapsedSeconds) / maxDegradeSeconds) * 100);
+    return degradationPercentage;
+}
+
+// [ADD-REVISED] ฟังก์ชันที่ขาดหายไป (จำเป็นสำหรับ utils.js)
+function getDegradationMain(item) {
+    if (item.type === "item_weapon" || item.degradation === undefined || item.degradation === null || TIME_NOW === undefined) return "";
+    const degradationPercentage = (item.percentage !== undefined && item.percentage !== null) ? item.percentage : getItemDegradationPercentage(item);
+    const color = getColorForDegradation(degradationPercentage); // (ฟังก์ชันนี้อยู่ใน utils.js)
+    return `<br>${LANGUAGE.labels.decay}<span style="color: ${color}">${degradationPercentage.toFixed(0)}%</span>`;
+}
 
 
+/* =================================
+  FILTER / TAB LOGIC (MODIFIED)
+  =================================
+*/
+
+// (ฟังก์ชันเดิม)
 function bindButtonEventListeners() {
-    document.querySelectorAll('.dropdownButton[data-type="itemtype"]').forEach(button => {
+    document.querySelectorAll('#inventoryHud .tab[data-type="itemtype"]').forEach(button => {
         button.addEventListener('mouseenter', function () {
             OverSetTitle(this.getAttribute('data-param'));
             OverSetDesc(this.getAttribute('data-desc'));
@@ -40,8 +75,9 @@ function bindButtonEventListeners() {
     });
 }
 
+// (ฟังก์ชันเดิม - ใช้กับหน้าต่างที่สอง)
 function bindSecondButtonEventListeners() {
-    document.querySelectorAll('.dropdownButton1[data-type="itemtype"]').forEach(button => {
+    document.querySelectorAll('#secondInventoryHud .tab[data-type="itemtype"]').forEach(button => {
         button.addEventListener('mouseenter', function () {
             OverSetTitleSecond(this.getAttribute('data-param'));
             OverSetDescSecond(this.getAttribute('data-desc'));
@@ -53,146 +89,70 @@ function bindSecondButtonEventListeners() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    bindButtonEventListeners();
-    bindSecondButtonEventListeners();
-
-    document.querySelectorAll('.dropdownButton[data-type="clothing"]').forEach(button => {
-        button.addEventListener('mouseenter', function () {
-            OverSetTitle(this.getAttribute('data-param'));
-            OverSetDesc(this.getAttribute('data-desc'));
-        });
-        button.addEventListener('mouseleave', function () {
-            OverSetTitle(" ");
-            OverSetDesc(" ");
-        });
-    });
-});
-
-function toggleDropdown(mainButton) {
-    const dropdownButtonsContainers = document.querySelectorAll('.dropdownButtonContainer');
-    dropdownButtonsContainers.forEach((container) => {
-        if (container.classList.contains(mainButton)) {
-            const isVisible = container.classList.toggle('showDropdown');
-            const parentCarouselContainer = container.closest('.carouselContainer');
-            if (parentCarouselContainer) {
-                const controls = parentCarouselContainer.querySelectorAll('.carousel-control');
-                controls.forEach(control => control.style.visibility = isVisible ? 'visible' : 'hidden');
-            }
-        } else {
-            container.classList.remove('showDropdown');
-            const otherParentCarouselContainer = container.closest('.carouselContainer');
-            if (otherParentCarouselContainer) {
-                const controls = otherParentCarouselContainer.querySelectorAll('.carousel-control');
-                controls.forEach(control => control.style.visibility = 'hidden');
-            }
-        }
-    });
-
-    const dropdownContainers = document.querySelectorAll('.dropdownButtonContainer');
-    dropdownContainers.forEach(container => {
-        container.addEventListener('wheel', function (event) {
-            event.preventDefault();
-            this.scrollLeft += event.deltaY;
-        }, { passive: false });
-    });
-}
-
-function initializeStaticCarousel() {
-
-    const staticCarouselControls = document.querySelectorAll('.carouselWrapper1 .carousel-control1');
-    staticCarouselControls.forEach(control => control.style.visibility = 'visible');
-    const staticDropdownContainer = document.querySelector('#staticCarousel');
-    if (staticDropdownContainer) {
-        staticDropdownContainer.addEventListener('wheel', function (event) {
-            event.preventDefault();
-            this.scrollLeft += event.deltaY;
-        }, { passive: false });
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initializeStaticCarousel);
-
-function scrollCarousel(carouselId, direction) {
-    const container = document.getElementById(carouselId);
-    const scrollAmount = 200;
-    let newScrollPosition = container.scrollLeft + (scrollAmount * direction);
-    container.scrollTo({
-        top: 0,
-        left: newScrollPosition,
-        behavior: 'smooth'
-    });
-    container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
-}
-
-let actionsConfigLoaded; // Holds the promise once initialized
-
+// (ฟังก์ชันเดิม)
+let actionsConfigLoaded; 
 function loadActionsConfig() {
     if (!actionsConfigLoaded) {
         actionsConfigLoaded = new Promise((resolve, reject) => {
             fetch(`https://${GetParentResourceName()}/getActionsConfig`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json; charset=UTF-8',
-                }
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' }
             })
-                .then(response => response.json())
-                .then(actionsConfig => {
-                    window.Actions = actionsConfig;
-                    resolve(actionsConfig);
-                })
-                .catch(error => {
-                    reject(error);
-                });
+            .then(response => response.json())
+            .then(actionsConfig => {
+                window.Actions = actionsConfig;
+                resolve(actionsConfig);
+            })
+            .catch(error => reject(error));
         });
     }
     return actionsConfigLoaded;
 }
 
+/**
+ * [MODIFIED] สร้างปุ่ม Filter (Tabs) - (ใช้ 6 หมวดหมู่ใหม่ + Icons)
+ */
 function generateActionButtons(actionsConfig, containerId, inventoryContext, buttonClass) {
-    const basePath = "img/itemtypes/";
     const container = document.getElementById(containerId);
 
     if (container) {
+        container.innerHTML = ''; 
+
         Object.keys(actionsConfig).forEach(key => {
             const action = actionsConfig[key];
             const button = document.createElement('button');
-            button.className = buttonClass;
+            button.className = buttonClass; 
             button.type = 'button';
             button.setAttribute('data-type', 'itemtype');
             button.setAttribute('data-param', key);
             button.setAttribute('data-desc', action.desc);
             button.setAttribute('onclick', `action('itemtype', '${key}', '${inventoryContext}')`);
-
-            const div = document.createElement('div');
-            const img = document.createElement('img');
-            img.src = basePath + action.img;
-            img.alt = "Image";
-            div.appendChild(img);
-            button.appendChild(div);
+            
+            // [NEW] สร้าง Icon (รูปภาพ)
+            const icon = document.createElement('img');
+            icon.src = `img/itemtypes/${action.img}`; // ใช้ img path จาก groups.lua
+            icon.alt = key; // ใช้ key (เช่น 'weapons') เป็น alt text
+            
+            button.appendChild(icon); // เพิ่ม <img> เข้าไปใน <button>
             container.appendChild(button);
         });
 
         bindButtonEventListeners();
         bindSecondButtonEventListeners();
-    } else {
-        console.warn(`Container for action buttons not found: ${containerId}`);
     }
 }
 
+/**
+ * [MODIFIED] จัดการการคลิก Tab
+ */
 function action(type, param, inv) {
     if (type === 'itemtype') {
-        if (inv === "inventoryElement") {
-            document.querySelectorAll('.dropdownButton[data-type="itemtype"]').forEach(btn => btn.classList.remove('active'));
-            const activeButtonMain = document.querySelector(`.dropdownButton[data-param="${param}"][data-type="itemtype"]`);
-            if (activeButtonMain) activeButtonMain.classList.add('active');
-        } else if (inv === "secondInventoryElement") {
-            document.querySelectorAll('.dropdownButton1').forEach(btn => {
-                if (btn.getAttribute('data-type') === 'itemtype') btn.classList.remove('active');
-            });
-            const activeButtonSecond = document.querySelector(`.dropdownButton1[data-param="${param}"][data-type="itemtype"]`);
-            if (activeButtonSecond) activeButtonSecond.classList.add('active');
-        }
+        const hudId = (inv === "inventoryElement") ? '#inventoryHud' : '#secondInventoryHud';
+        
+        document.querySelectorAll(`${hudId} .tab[data-type="itemtype"]`).forEach(btn => btn.classList.remove('active'));
+        const activeButton = document.querySelector(`${hudId} .tab[data-param="${param}"][data-type="itemtype"]`);
+        if (activeButton) activeButton.classList.add('active');
+
         if (param in Actions) {
             const action = Actions[param];
             showItemsByType(action.types, inv);
@@ -200,25 +160,31 @@ function action(type, param, inv) {
             const defaultAction = Actions['all'];
             showItemsByType(defaultAction.types, inv);
         }
-    } else if (type === 'clothing') {
-        const clickedButton = document.querySelector(`.dropdownButton[data-param="${param}"][data-type="clothing"], .dropdownButton1[data-param="${param}"][data-type="clothing"]`);
-        if (clickedButton) {
-            clickedButton.classList.toggle('active');
-        }
-        $.post(
-            `https://${GetParentResourceName()}/ChangeClothing`, JSON.stringify(param)
-        );
-    }
+    } 
 }
 
-/* FILTER ITEMS BY TYPE */
+/**
+ * [MODIFIED] กรองไอเท็ม (ใช้ .item-card)
+ */
 function showItemsByType(itemTypesToShow, inv) {
     let itemDiv = 0;
     let itemEmpty = 0;
-    $(`#${inv} .item`).each(function () {
-        const group = $(this).data("group");
 
-        if (itemTypesToShow.length === 0 || itemTypesToShow.includes(group)) {
+    // [FIX 1] ดึงค่าจาก Search Bar ที่ถูกต้อง
+    // inv คือ "inventoryElement" หรือ "secondInventoryElement"
+    let searchInputId = (inv === "inventoryElement") ? "#main-search" : "#second-search";
+    let searchText = $(searchInputId).val().toLowerCase().trim();
+
+    $(`#${inv} .item-card`).each(function () {
+        const group = $(this).data("group");
+        const itemLabel = $(this).data("label") ? $(this).data("label").toLowerCase() : "";
+
+        // [FIX 2] ตรวจสอบเงื่อนไข 2 อย่าง: Tab และ Search
+        let matchesTab = itemTypesToShow.length === 0 || itemTypesToShow.includes(group);
+        let matchesSearch = itemLabel.includes(searchText);
+
+        // [FIX 3] ต้องตรงกับ Tab *และ* (เป็นช่องว่าง [data-group="0"] หรือ ตรงกับที่ค้นหา)
+        if (matchesTab && (group === 0 || matchesSearch)) {
             if (group != 0) {
                 itemDiv = itemDiv + 1;
             } else {
@@ -230,353 +196,215 @@ function showItemsByType(itemTypesToShow, inv) {
         }
     });
 
-    if (itemDiv < 12) {
+    // [MODIFIED] เติมช่องว่าง (โค้ดเดิมจาก invScript.js)
+    const minSlots = 40;
+    if (itemDiv < minSlots) {
         if (itemEmpty > 0) {
             for (let i = 0; i < itemEmpty; i++) {
-                $(`#${inv} .item[data-group="0"]`).remove();
+                $(`#${inv} .item-card[data-group="0"]`).remove();
             }
         }
-        /* if itemDiv is less than 12 then create the rest od the divs */
-        const emptySlots = 16 - itemDiv;
+        const emptySlots = minSlots - itemDiv;
         for (let i = 0; i < emptySlots; i++) {
-            $(`#${inv}`).append(`<div data-group="0" class="item"></div>`);
+            $(`#${inv}`).append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
         }
-    }
-
-}
-
-$(document).ready(function () {
-
-    $(document).on('mouseenter', '.item', function () {
-
-        if ($(this).data('tooltip') && !stopTooltip) {
-
-            const tooltipText = $(this).data('tooltip');
-            const $tooltip = $('<div></div>')
-                .addClass('tooltip')
-                .css('pointer-events', 'none')
-                .html(tooltipText)
-                .appendTo('body');
-
-            const itemOffset = $(this).offset();
-            const tooltipTop = itemOffset.top + $(this).outerHeight() + 10;
-            const tooltipLeft = itemOffset.left;
-
-            $tooltip.css({
-                'top': tooltipTop,
-                'left': tooltipLeft,
-                'position': 'absolute',
-                'display': 'block'
-            });
-        }
-    });
-
-    $(document).on('mouseleave', '.item', function () {
-        $('.tooltip').remove();
-    });
-});
-
-function moveInventory(inv) {
-    const inventoryHud = document.getElementById('inventoryHud');
-    if (inv === 'main') {
-        inventoryHud.style.left = '50%';
-        inventoryHud.style.transform = 'translate(-50%, -50%)';
-    } else if (inv === 'second') {
-        inventoryHud.style.left = '1%';
-        inventoryHud.style.transform = 'translate(0, -50%)';
     }
 }
 
 
+/**
+ * [MODIFIED] สร้างไอเท็ม 1 ชิ้น (ข้อ 1)
+ * @returns {boolean} - คืนค่า true ถ้าวาดไอเท็ม, false ถ้าข้าม
+ */
+function loadInventoryItem(item, index) {
+    
+    if (item.type === "item_money" || item.type === "item_gold") return false; 
+    
+    const count = item.count;
+    const limit = item.limit; 
+    const group = item.type != "item_weapon" ? (!item.group ? 1 : item.group) : 5;
+    
+    const { tooltipData, degradation, image, label, weight, description } = getItemMetadataInfo(item, false);
+    
+    const imageUrl = imageCache[image] || 'img/items/placeholder.png';
+    // const itemWeight = (weight * count).toFixed(2); // [REMOVED] (ข้อ 6)
+    
+    // [MODIFIED] (ข้อ 7 & 9) - เพิ่มการแสดง 'x1' สำหรับอาวุธ
+    let qtyDisplay = "";
+    if (item.type == "item_weapon") {
+        qtyDisplay = "x1";
+    } else if (limit > 1) { // Stackable
+        qtyDisplay = `${count} / ${limit}`;
+    } else if (count > 1) { // Non-stackable
+        qtyDisplay = `x${count}`;
+    }
+    // ถ้า count <= 1 (สำหรับ item ทั่วไป) qtyDisplay จะยังคงเป็น "" (ไม่แสดงผล)
 
+    // [MODIFIED] (ข้อ 1, 5, 6, 7, 9)
+    const itemHtml = `
+        <div class="item-card" id="item-${index}" data-group='${group}' data-label='${label}' data-inventory="main" data-tooltip="Weight: ${weight} ${Config.WeightMeasure} ${degradation}">
+            <img src="${imageUrl}" alt="${label}" onerror="fallbackImg(this)">
+            
+            ${qtyDisplay ? `<p class="item-qty">${qtyDisplay}</p>` : ""}
+            
+            <p class="item-name">${label}</p>
+            
+            <div class="equipped-icon" style="display: ${!item.used && !item.used2 ? "none" : "block"};"></div>
+        </div>
+    `;
+    
+    $("#inventoryElement").append(itemHtml);
+
+    addData(index, item);
+    return true;
+}
+
+
+/**
+ * [HEAVILY MODIFIED] ผูก Event ให้กับไอเท็ม (คลิก, ดับเบิลคลิก, ปุ่ม Action)
+ */
 function addData(index, item) {
+    const itemElement = $("#item-" + index);
 
-    $("#item-" + index).data("item", item);
-    $("#item-" + index).data("inventory", "main");
+    itemElement.data("item", item);
+    itemElement.data("inventory", "main");
 
-    const data = [];
+    // [REMOVED] (Desc on Click) ลบ Logic on('mouseenter') ออก
+    /*
+    itemElement.on('mouseenter', () => {
+        // ...
+    });
+    */
 
+    // 2. ดับเบิลคลิก
     if (Config.DoubleClickToUse) {
-
-        $("#item-" + index).dblclick(function () {
-
+        itemElement.dblclick(function () {
             if (item.used || item.used2) {
                 $(this).find('.equipped-icon').hide();
                 $.post(`https://${GetParentResourceName()}/UnequipWeapon`, JSON.stringify({
-                    item: item.name,
-                    id: item.id,
+                    item: item.name, id: item.id,
                 }));
-
             } else {
-
                 if (item.type == "item_weapon") {
                     $(this).find('.equipped-icon').show();
                 }
-
                 $.post(`https://${GetParentResourceName()}/UseItem`, JSON.stringify({
-                    item: item.name,
-                    type: item.type,
-                    hash: item.hash,
-                    amount: item.count,
-                    id: item.id,
+                    item: item.name, type: item.type, hash: item.hash, amount: item.count, id: item.id,
                 }));
             }
         });
+    }
+    
+    // 4. [NEW] คลิกซ้าย (แทนที่ Context Menu เดิม)
+    itemElement.on('click', function() {
+        // ไฮไลท์ไอเท็ม
+        $('.item-card').removeClass('active');
+        $(this).addClass('active');
 
-    } else {
+        // [MODIFIED] (Desc on Click) อัปเดตข้อมูล Footer
+        let { label, description } = getItemMetadataInfo(item, false);
+        
+        // [NEW] (Serial in Desc) เพิ่ม Serial ลงใน Description
+        if (item.type == "item_weapon" && item.serial_number) {
+            description += `<br><span class="serial-number">Serial: ${item.serial_number}</span>`;
+        }
+        
+        OverSetTitle(label);
+        OverSetDesc(description);
+        
+        // ล้างปุ่ม Action เก่า
+        const actionButtons = $("#action-buttons");
+        actionButtons.empty();
+
+        // สร้างปุ่ม Action ใหม่จาก Logic เดิมของ VORP
+        
+        // --- ปุ่ม Use / Equip ---
+        let lang = LANGUAGE.use;
+        let actionFunc = function() {
+            if (item.type == "item_weapon") $(this).find('.equipped-icon').show();
+            $.post(`https://${GetParentResourceName()}/UseItem`, JSON.stringify({
+                item: item.name, type: item.type, hash: item.hash, amount: item.count, id: item.id,
+            }));
+        };
+
         if (item.used || item.used2) {
-            data.push({
-                text: LANGUAGE.unequip,
-                action: function () {
-                    $(this).find('.equipped-icon').hide();
-                    $.post(`https://${GetParentResourceName()}/UnequipWeapon`,
-                        JSON.stringify({
-                            item: item.name,
-                            id: item.id,
-                        })
-                    );
-                },
-            });
-        } else {
-            if (item.type != "item_weapon") {
-                lang = LANGUAGE.use;
-            } else {
-                lang = LANGUAGE.equip;
-            }
-            data.push({
-                text: lang,
-                action: function () {
-                    if (item.type == "item_weapon") {
-                        $(this).find('.equipped-icon').show();
-                    }
-                    $.post(`https://${GetParentResourceName()}/UseItem`,
-                        JSON.stringify({
-                            item: item.name,
-                            type: item.type,
-                            hash: item.hash,
-                            amount: item.count,
-                            id: item.id,
-                        })
-                    );
-                },
-            });
+            lang = LANGUAGE.unequip;
+            actionFunc = function() {
+                $(this).find('.equipped-icon').hide();
+                $.post(`https://${GetParentResourceName()}/UnequipWeapon`, JSON.stringify({
+                    item: item.name, id: item.id,
+                }));
+            };
+        } else if (item.type == "item_weapon") {
+            lang = LANGUAGE.equip;
         }
-    }
 
-    if (item.canRemove) {
-        data.push({
-            text: LANGUAGE.give,
-            action: function () {
-                giveGetHowMany(item.name, item.type, item.hash, item.id, item.metadata, item.count);
-            },
-        });
+        actionButtons.append(
+            $(`<button class="btn primary">${lang}</button>`).on('click', actionFunc)
+        );
 
-        data.push({
-            text: LANGUAGE.drop,
-            action: function () {
-                dropGetHowMany(
-                    item.name,
-                    item.type,
-                    item.hash,
-                    item.id,
-                    item.metadata,
-                    item.count,
-                    item.degradation,
-                    item.percentage
+        // --- ปุ่ม Give & Drop (ถ้าไอเท็มอนุญาต) ---
+        if (item.canRemove) {
+            actionButtons.append(
+                $(`<button class="btn">${LANGUAGE.give}</button>`).on('click', function() {
+                    giveGetHowMany(item.name, item.type, item.hash, item.id, item.metadata, item.count);
+                })
+            );
+            actionButtons.append(
+                $(`<button class="btn">${LANGUAGE.drop}</button>`).on('click', function() {
+                    dropGetHowMany(item.name, item.type, item.hash, item.id, item.metadata, item.count, item.degradation, item.percentage);
+                })
+            );
+        }
+
+        // [REMOVED] (Serial in Desc) ลบปุ่ม Copy Serial
+
+        // --- ปุ่ม Custom Context (จาก `item.metadata.context`) ---
+        if (item.metadata?.context) {
+            item.metadata.context.forEach(option => {
+                actionButtons.append(
+                    $(`<button class="btn">${option.text}</button>`).on('click', function() {
+                        option.itemid = item.id;
+                        $.post(`https://${GetParentResourceName()}/ContextMenu`, JSON.stringify(option));
+                    })
                 );
-            },
-        });
-        if (Config.EnableCopySerial && item.type == "item_weapon" && item.serial_number) {
-            data.push({
-                text: LANGUAGE.copyserial,
-                action: function () {
-                    const clipElem = document.createElement('textarea');
-                    clipElem.value = item.serial_number;
-                    document.body.appendChild(clipElem);
-                    clipElem.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(clipElem);
-                },
             });
         }
-    }
-
-
-    if (item.metadata?.context) {
-        item.metadata.context.forEach(option => {
-            data.push({
-                text: option.text,
-                action: function () {
-                    option.itemid = item.id;
-                    $.post(`https://${GetParentResourceName()}/ContextMenu`,
-                        JSON.stringify(option)
-                    );
-                }
-            });
-        });
-    }
-
-    if (data.length > 0) {
-        $("#item-" + index).contextMenu([data], {
-            offsetX: 1,
-            offsetY: 1,
-        });
-    }
-
-    const itemElement = document.getElementById(`item-${index}`);
-
-    itemElement.addEventListener('mouseenter', () => {
-        const { label, description } = getItemMetadataInfo(item);
-        OverSetTitle(label);
-        OverSetDesc(description);
-
     });
-
-    itemElement.addEventListener('mouseleave', () => {
-        OverSetTitle(" ");
-        OverSetDesc(" ");
-    });
-
-}
-
-function getItemDegradationPercentage(item) {
-    if (item.maxDegradation === 0) return 1;
-    const now = TIME_NOW
-    const maxDegradeSeconds = item.maxDegradation * 60;
-    const elapsedSeconds = now - item.degradation;
-    const degradationPercentage = Math.max(0, ((maxDegradeSeconds - elapsedSeconds) / maxDegradeSeconds) * 100);
-    return degradationPercentage;
-}
-
-/**
- * Get the degradation percentage 
- * @param {Object} item - The item object
- * @returns {string}
- */
-function getDegradationMain(item) {
-
-    if (item.type === "item_weapon" || item.maxDegradation === 0 || item.degradation === undefined || item.degradation === null || TIME_NOW === undefined) return "";
-    const degradationPercentage = getItemDegradationPercentage(item);
-    const color = getColorForDegradation(degradationPercentage);
-
-    return `<br>${LANGUAGE.labels.decay}<span style="color: ${color}">${degradationPercentage.toFixed(0)}%</span>`;
-
-}
-
-/**
- * Load inventory items
- * @param {Object} item - The item object
- * @param {number} index - The index of the item
- * @param {number} group - The group of the item
- * @param {number} count - The count of the item
- * @param {number} limit - The limit of the item
- */
-function loadInventoryItems(item, index, group, count, limit) {
-
-    if (item.type === "item_weapon") return;
-
-    const { tooltipData, degradation, image, label, weight } = getItemMetadataInfo(item, false);
-    const itemWeight = getItemWeight(weight, count);
-    const groupKey = getGroupKey(group);
-    const { tooltipContent, url } = getItemTooltipContent(image, groupKey, group, limit, itemWeight, degradation, tooltipData);
-    const imageOpacity = getItemDegradationPercentage(item) === 0 ? 0.5 : 1;
-
-    $("#inventoryElement").append(`<div data-group='${group}' data-label='${label}' style='background-image: ${url} background-size: 4.5vw 7.7vh; background-repeat: no-repeat; background-position: center; opacity: ${imageOpacity};' id='item-${index}' class='item' data-tooltip='${tooltipContent}'> 
-        <div class='count'>
-            <span style='color:Black'>${count}</span>
-        </div>
-    </div>`);
-
-}
-
-/**
- * Load inventory weapons
- * @param {Object} item - The item object
- * @param {number} index - The index of the item
- * @param {number} group - The group of the item
- * @param {number} count - The count of the item
- */
-function loadInventoryWeapons(item, index, group) {
-    if (item.type != "item_weapon") return;
-
-    const weight = getItemWeight(item.weight, 1);
-    const info = item.serial_number ? "<br>" + (LANGUAGE.labels?.ammo ?? "Ammo") + item.count + "<br>" + (LANGUAGE.labels?.serial ?? "Serial") + item.serial_number : "";
-    const url = imageCache[item.name]
-    const label = item.custom_label ? item.custom_label : item.label;
-
-    $("#inventoryElement").append(`<div data-label='${label}' data-group='${group}' style='background-image: ${url} background-size: 4.5vw 7.7vh; background-repeat: no-repeat; background-position: center;' id='item-${index}' class='item' data-tooltip="${weight + info}">
-        <div class='equipped-icon' style='display: ${!item.used && !item.used2 ? "none" : "block"};'></div>
-    </div> `);
 }
 
 
 /**
- * Load fixed items in the main inventory
- * @param {string} label - The label of the item
- * @param {string} description - The description of the item
- * @param {string} item - The item name
- * @param {Array} data - The data for the context menu
+ * [HEAVILY MODIFIED] ฟังก์ชันหลักในการวาด Inventory
  */
-function mainInventoryFixedItems(label, description, item, data) {
-    $("#inventoryElement").append(`<div data-label='${label}' data-group='1' style='background-image: url(\"img/items/${item}.png\"); background-size: 4.5vw 6.7vh; background-repeat: no-repeat; background-position: center;' id='item-${item}' class='item'></div>`);
-
-    $("#item-" + item).contextMenu([data], {
-        offsetX: 1,
-        offsetY: 1,
-    });
-
-    const itemElement = document.getElementById(`item-${item}`);
-    itemElement.addEventListener('mouseenter', () => {
-        OverSetTitle(label);
-        OverSetDesc(description);
-    });
-
-    itemElement.addEventListener('mouseleave', () => {
-        OverSetTitle(" ");
-        OverSetDesc(" ");
-    });
-}
-
-
 function inventorySetup(items) {
-
-
     $("#inventoryElement").html("");
-    let divAmount = 0;
+    let divAmount = 0; 
 
     if (items.length > 0) {
-
-        $.each(items, function () {
-            divAmount = divAmount + 1;
-        });
-
         for (const [index, item] of items.entries()) {
             if (item) {
-                const count = item.count;
-                const limit = item.limit;
-                const group = item.type != "item_weapon" ? !item.group ? 1 : item.group : 5;
-
-                loadInventoryItems(item, index, group, count, limit);
-                loadInventoryWeapons(item, index, group);
-                addData(index, item);
+                if (loadInventoryItem(item, index)) {
+                    divAmount++;
+                }
             }
         };
     }
 
-    const gunbelt_item = "gunbelt";
+    // [ADD-REVISED] ผูก Logic ไอเท็มพิเศษ (Gunbelt, Money, Gold)
     const gunbelt_label = LANGUAGE.gunbeltlabel;
     const gunbelt_desc = LANGUAGE.gunbeltdescription;
-    var data = [];
+    var dataAmmo = []; 
 
     let empty = true;
     if (allplayerammo) {
         for (const [ind, tab] of Object.entries(allplayerammo)) {
             if (tab > 0) {
                 empty = false;
-                data.push({
+                dataAmmo.push({ 
                     text: `${ammolabels[ind]} : ${tab}`,
                     action: function () {
-                        giveammotoplayer(ind);
+                        giveammotoplayer(ind); 
                     },
                 });
             }
@@ -584,145 +412,118 @@ function inventorySetup(items) {
     }
 
     if (empty) {
-        data.push({
+        dataAmmo.push({
             text: LANGUAGE.empty,
             action: function () { },
         });
     }
 
+    // [FIX] ITEM พิเศษ: Gunbelt
     if (Config.AddAmmoItem) {
-        mainInventoryFixedItems(gunbelt_label, gunbelt_desc, gunbelt_item, data);
-        $("#item-" + gunbelt_item).data("item", gunbelt_item);
-        $("#item-" + gunbelt_item).data("inventory", "none");
-    } else {
-        $("#ammobox").contextMenu([data], {
+        $("#ammobox").show(); 
+        $("#ammobox").contextMenu([dataAmmo], { 
             offsetX: 1,
             offsetY: 1,
-        });
-
-        $("#ammobox").hover(
-            function () {
-                $("#hint").show();
-                document.getElementById("hint").innerHTML = gunbelt_label;
-            },
-            function () {
-                $("#hint").hide();
-                document.getElementById("hint").innerHTML = "";
+            // [NEW] (ข้อ 2) ลบเมนูอื่นก่อนแสดง
+            beforeShow: function() { 
+                $(".site-cm-box").remove(); 
+                return true; 
             }
-        );
+        });
+        // [REMOVED] (Desc on Click) ลบ on('hover') ออก
+    } else {
+         $("#ammobox").hide();
     }
 
-    isOpen = true;
-    initDivMouseOver();
-    //AddMoney
+
+    // [ADD-REVISED] ผูก Logic ไอเท็มพิเศษ (Money)
     const m_item = "money";
     const m_label = LANGUAGE.inventorymoneylabel;
     const m_desc = LANGUAGE.inventorymoneydescription;
+    var dataMoney = [];
 
-    var data = [];
-
-    data.push({
+    dataMoney.push({
         text: LANGUAGE.givemoney,
         action: function () {
-            giveGetHowManyMoney();
+            giveGetHowManyMoney(); 
         },
     });
-
-    data.push({
+    // [REMOVED] (ข้อ 11) ลบปุ่ม Drop Money
+    /*
+    dataMoney.push({
         text: LANGUAGE.dropmoney,
         action: function () {
-            dropGetHowMany(m_item, "item_money", "asd", 0);
+            dropGetHowMany(m_item, "item_money", "asd", 0); 
         },
     });
+    */
 
-    if (Config.AddDollarItem) {
-
-        mainInventoryFixedItems(m_label, m_desc, m_item, data);
-        $("#item-" + m_item).data("item", m_item);
-        $("#item-" + m_item).data("inventory", "none");
-    } else {
-        $("#cash").contextMenu([data], {
+    // [FIX] ITEM พิเศษ: Money
+    $("#cash").show(); 
+    if (Config.AddDollarItem) { 
+        $("#cash").contextMenu([dataMoney], {
             offsetX: 1,
             offsetY: 1,
-        });
-
-        $("#cash").hover(
-            function () {
-                $("#money-value").hide();
-                $("#hint-money-value").show();
-                $("#hint-money-value").text(m_label);
-            },
-            function () {
-                $("#money-value").show();
-                $("#hint-money-value").hide();
+            // [NEW] (ข้อ 2) ลบเมนูอื่นก่อนแสดง
+            beforeShow: function() { 
+                $(".site-cm-box").remove(); 
+                return true; 
             }
-        );
+        });
+        // [REMOVED] (Desc on Click) ลบ on('hover') ออก
     }
 
-    isOpen = true;
-    initDivMouseOver();
 
-    if (Config.UseGoldItem) {
-        //AddGold
-        const g_item = "gold";
-        const g_label = LANGUAGE.inventorygoldlabel;
-        const g_desc = LANGUAGE.inventorygolddescription;
+    // [ADD-REVISED] ผูก Logic ไอเท็มพิเศษ (Gold)
+    const g_item = "gold";
+    const g_label = LANGUAGE.inventorygoldlabel;
+    const g_desc = LANGUAGE.inventorygolddescription;
+    let dataGold = [];
 
-        let data = [];
+    dataGold.push({
+        text: LANGUAGE.givegold,
+        action: function () {
+            giveGetHowManyGold(); 
+        },
+    });
+    // [REMOVED] (ข้อ 11) ลบปุ่ม Drop Gold
+    /*
+    dataGold.push({
+        text: LANGUAGE.dropgold,
+        action: function () {
+            dropGetHowMany(g_item, "item_gold", "asd", 0); 
+        },
+    });
+    */
 
-        data.push({
-            text: LANGUAGE.givegold,
-            action: function () {
-                giveGetHowManyGold();
-            },
+    $("#gold").show(); 
+    if (Config.AddGoldItem) {
+        $("#gold").contextMenu([dataGold], {
+            offsetX: 1,
+            offsetY: 1,
+            // [NEW] (ข้อ 2) ลบเมนูอื่นก่อนแสดง
+            beforeShow: function() { 
+                $(".site-cm-box").remove(); 
+                return true; 
+            }
         });
-
-        data.push({
-            text: LANGUAGE.dropgold,
-            action: function () {
-                dropGetHowMany(g_item, "item_gold", "asd", 0);
-            },
-        });
-
-        if (Config.AddGoldItem) {
-
-            mainInventoryFixedItems(g_label, g_desc, g_item, data);
-            $("#item-" + g_item).data("item", g_item);
-            $("#item-" + g_item).data("inventory", "none");
-        } else {
-            $("#gold").contextMenu([data], {
-                offsetX: 1,
-                offsetY: 1,
-            });
-
-            $("#gold").hover(
-                function () {
-                    $("#gold-value").hide();
-                    $("#hint-gold-value").show();
-                    $("#hint-gold-value").text(g_label);
-                },
-                function () {
-                    $("#gold-value").show();
-                    $("#hint-gold-value").hide();
-                }
-            );
-        }
-
-        isOpen = true;
-        initDivMouseOver();
+        // [REMOVED] (Desc on Click) ลบ on('hover') ออก
+    }
+    // [FIX] ตรวจสอบ Config.UseGoldItem ด้วย
+    if (!Config.UseGoldItem) {
+        $("#gold").hide();
     }
 
-    /* in here we ensure that at least all divs are filled */
-    if (divAmount < 12 && divAmount > 0) {
-        const emptySlots = 14 - divAmount;
-        for (let i = 0; i < emptySlots; i++) {
-            $("#inventoryElement").append(`<div class='item' data-group='0'></div>`);
-        }
-    } else if (divAmount == 0) {
-        const emptySlots = 14 - divAmount;
-        for (let i = 0; i < emptySlots; i++) {
-            $("#inventoryElement").append(`<div class='item' data-group='0'></div>`);
-        }
 
+    isOpen = true; 
+    initDivMouseOver(); 
+
+    // [MODIFIED] เติมช่องว่าง
+    const minSlots = 40; 
+    if (divAmount < minSlots) {
+        const emptySlots = minSlots - divAmount;
+        for (let i = 0; i < emptySlots; i++) {
+            $("#inventoryElement").append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
+        }
     }
 }

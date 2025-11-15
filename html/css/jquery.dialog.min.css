@@ -1,319 +1,283 @@
-@font-face {
-	font-family: crock;
-	src: url(../fonts/crock.ttf) format('truetype');
-}
+/* =========================================================
+   jQuery Dialog UI — Dark Minimalist Theme (Final Revision)
+   Author: Warakon Custom Version (Modified by Gemini)
+   Updated: 2025-11-13
+   ========================================================= */
 
+/* === IMPORT FONT === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* === OVERLAY === */
 #dialog-overlay {
-	position: absolute;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	right: 30px;
-	z-index: 966;
-	color: #fff;
-	text-align: center;
-	font-size: 18px;
-	text-shadow: none;
-	opacity: 0;
-	transition: opacity .5s;
-	transform: translateZ(0)
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1010;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    text-align: center;
+    opacity: 0;
+    transition: opacity .4s ease;
+    transform: translateZ(0);
 }
 
-#dialog-overlay.dialog-closing {
-	transition: opacity .25s
-}
+#dialog-overlay.dialog-visible { opacity: 1; }
+#dialog-overlay.dialog-closing { transition: opacity .25s ease; }
 
-#dialog-overlay.dialog-visible {
-	opacity: 1
-}
-
+/* === HOLDER === */
 #dialog-holder {
-	position: absolute;
-	top: 0%;
-	left: -1vw;
-	opacity: 0.9;
-	right: 0;
-	height: 100%;
-	z-index: 977;
-	cursor: default;
-	font-family: crock;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	transform: translateZ(0)
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1011;
+    cursor: default;
+    font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateZ(0);
 }
 
-#dialog-holder.dialog-fixed {
-	position: fixed;
-	overflow: auto
-}
+#dialog-holder.dialog-fixed { overflow: hidden; }
 
 #dialog-holder #dialog-center {
-
-	width: 100%;
-	height: 100%;
-	z-index: 999;
-	border-spacing: 0;
-	padding: 0;
-	margin: 0
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #dialog-holder #dialog-center td {
-	text-align: center;
-	vertical-align: middle;
-	padding: 0%;
-	margin: 0px;
-	width: 90%;
-	perspective: 1000px;
-	font-family: crock;
-
+    text-align: center;
+    vertical-align: middle;
+    width: 100%;
 }
 
-#dialog-holder #dialog-center td .dialog-alert {
-	z-index: 999;
-	position: relative;
-	margin: 0 auto;
-	padding: 4vh 2vw;
-	background-image: url(../img/bgPanel2.png);
-	background-repeat: no-repeat;
-	background-position: center;
-	max-width: 14vw;
-	word-break: break-word;
-	display: none;
-	opacity: 0;
-	transition: transform .5s, opacity .45s;
-	background-size: 100% 100%;
-	z-index: 999;
-	transition: transform .5s, opacity .45s;
-	font-size: 1vw;
-
+/* === DIALOG BOX === */
+.dialog-alert {
+    position: relative;
+    margin: 0 auto;
+    padding: 20px 25px 20px 25px; /* ✅ เพิ่ม padding ล่าง */
+    background: rgba(20, 20, 20, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    max-width: 300px;
+    word-break: break-word;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: scale(0.8);
+    transition: transform .4s ease, opacity .4s ease;
+    display: none;
+    z-index: 999;
+    font-family: "Inter", sans-serif;
 }
 
+/* === Animation === */
+.dialog-alert[data-dialog-animation=scale].dialog-visible { transform: scale(1); opacity: 1; }
+.dialog-alert.dialog-closing { transition: transform .25s ease, opacity .25s ease; opacity: 0; transform: scale(0.9); }
+
+/* === Shake === */
 @keyframes shake {
-	20% {
-		transform: translateX(-12px) rotateY(-8deg)
-	}
+    20% { transform: translateX(-12px) rotateY(-8deg); }
+    40% { transform: translateX(12px) rotateY(8deg); }
+    60% { transform: translateX(-12px) rotateY(-8deg); }
+    80% { transform: translateX(12px) rotateY(8deg); }
+}
+.dialog-alert.dialog-shaking { animation: shake .5s linear; }
 
-	40% {
-		transform: translateX(12px) rotateY(8deg)
-	}
+/* === Title === */
+.dialog-title {
+    padding: 0 5px 15px 5px;
+    line-height: 1.2;
+    font-size: 20px;
+    font-weight: 600;
+    color: #f0f0f0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+.dialog-title:empty { padding: 0; border: 0; margin: 0; }
 
-	60% {
-		transform: translateX(-12px) rotateY(-8deg)
-	}
-
-	80% {
-		transform: translateX(12px) rotateY(8deg)
-	}
+/* === Message === */
+.dialog-message {
+    padding: 0 5px;
+    line-height: 1.444;
+    display: block;
+    max-width: 370px;
+    margin: 0 auto;
+    color: #999;
+    font-size: 14px;
 }
 
-#dialog-holder #dialog-center td .dialog-alert[data-dialog-animation=scale] {
-	-ms-transform: scale(.8);
-	transform: scale(.8);
+/* === INPUT FIELD === */
+.dialog-alert label {
+    display: block;
+    margin: 20px auto 0 auto;
+    max-width: 100%;
+    width: 100%;
 }
 
-#dialog-holder #dialog-center td .dialog-alert[data-dialog-animation=slide] {
-	-ms-transform: translateY(-50%);
-	transform: translateY(-50%);
+.dialog-alert label input {
+    box-sizing: border-box;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    outline: 0;
+    width: 100%;
+    font-size: 14px;
+    color: #f0f0f0;
+    font-family: "Inter", sans-serif;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 25px; /* ✅ เพิ่มระยะห่างจากปุ่ม */
+}
+.dialog-alert label input:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.08);
 }
 
-#dialog-holder #dialog-center td .dialog-alert.dialog-closing {
-	transition: transform .25s, opacity .2s;
+/* === BUTTONS (CONFIRM/CANCEL) === */
+.dialog-buttons-container { 
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: flex-end;
+    width: 100%;
 }
 
-#dialog-holder #dialog-center td .dialog-alert.dialog-visible {
-	-ms-transform: scale(1);
-	transform: scale(1);
-	opacity: 1;
+.dialog-confirm,
+.dialog-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f0f0f0;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    font-size: 14px;
+    font-family: "Inter", sans-serif;
+    display: inline-block; 
+    margin: 0;
+    box-shadow: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-#dialog-holder #dialog-center td .dialog-alert.dialog-shaking {
-	animation: shake .5s linear;
+.dialog-cancel:hover,
+.dialog-confirm:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
 }
 
-#dialog-holder #dialog-center td .dialog-alert .dialog-border {
-	position: absolute;
-	top: -1px;
-	left: -1px;
-	right: -1px;
-	bottom: -1px;
-	border: none;
-	z-index: -1;
-	opacity: .2;
-
+.dialog-confirm {
+    background: #ffffff;
+    color: #000;
+    border-color: #ffffff;
+    font-weight: 600;
+}
+.dialog-confirm:hover {
+    background: #e0e0e0;
+    border-color: #e0e0e0;
+    transform: translateY(-1px); 
 }
 
-#dialog-holder #dialog-center td .dialog-alert .dialog-title {
-	padding: 20px 5px;
-	padding-bottom: 100;
-	line-height: 25px;
-	font-size: 30px;
-	display: block;
-	color: white;
-	font-family: crock;
-
+.dialog-confirm:active,
+.dialog-cancel:active,
+.select:active {
+    box-shadow: none;
+    transform: translateY(0);
 }
 
-#dialog-holder #dialog-center td .dialog-alert .dialog-title:empty {
-	padding-top: 0
+/* === Player Select === */
+.dialog-alert .select {
+    margin: 10px 0 0 0;
+    padding: 12px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #f0f0f0;
+    text-align: left; 
+    font-size: 14px;
+    font-family: "Inter", sans-serif;
+    transition: all 0.2s ease-in-out;
+}
+.dialog-alert .select:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
-#dialog-holder #dialog-center td .dialog-alert .dialog-message {
-	padding: 0 5px;
-	padding-top: 20px;
-	line-height: 1.444;
-	display: block;
-	max-width: 370px;
-	margin: 0 auto
+/* === Close Button === */
+.dialog-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    opacity: .6;
+    transition: opacity .25s;
+    color: #999;
 }
 
-#dialog-holder #dialog-center td .dialog-alert .dialog-message a {
-	color: #ffffff
+.dialog-close:hover {
+    opacity: 1;
+    color: #f0f0f0;
 }
 
-#dialog-holder #dialog-center td .dialog-alert .dialog-message:empty {
-	padding-top: 0
+.dialog-clearFloat { clear: both; }
+
+/* === Extra Spacing for multiple inputs === */
+.dialog-alert label:not(:last-of-type) input {
+    margin-bottom: 20px;
 }
 
-#dialog-holder #dialog-center td .dialog-alert label {
-	display: block;
-	margin: 0 auto;
-	margin-top: 10px;
-	max-width: 200px
+/* === MAX Button additions === */
+.dialog-input-group {
+    display: flex;
+    align-items: flex-end; /* Align to the bottom of the input label */
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 25px; 
+    max-width: 100%;
+    width: 100%;
 }
-
-#dialog-holder #dialog-center td .dialog-alert label input {
-	box-sizing: border-box;
-	padding: 15px 20px;
-	border-radius: 12px;
-	border: none;
-	outline: 0;
-	width: 80%;
-	font-size: 0.9vw;
-	color: #000;
-	font-family: crock;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale
+.dialog-alert label {
+    margin: 0; /* Override margin-top for label inside the group */
+    margin-bottom: 0;
+    width: 100%;
 }
-
-#dialog-holder #dialog-center td .dialog-alert .select {
-	margin: 10px 5px 5px 5px;
-	padding: 15px 50px;
-	float: left;
-	width: 100%;
-	background: transparent;
-	cursor: pointer;
-	font-weight: 700;
-	max-width: 240px;
-	transition: background .25s;
-	box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0%);
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none
+.dialog-alert label input {
+    margin-bottom: 0; /* Remove redundant margin */
 }
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-cancel,
-#dialog-holder #dialog-center td .dialog-alert .dialog-confirm {
-	display: block;
-	margin: 40px auto 5px auto;
-	padding: 15px 30px;
-	cursor: pointer;
-	font-weight: 700;
-	max-width: 240px;
-	transition: background .25s;
-	box-shadow: inset 0 -3px 0 rgb(182 182 182 / 92%);
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none
+.dialog-max-button {
+    flex-shrink: 0; /* Prevent button from shrinking */
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f0f0f0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    font-family: "Inter", sans-serif;
+    transition: all 0.2s ease-in-out;
+    height: 38px; /* Match height of input field */
+    line-height: 18px; /* Vertically center text inside button */
 }
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-cancel:hover,
-#dialog-holder #dialog-center td .dialog-alert .dialog-confirm:hover,
-#dialog-holder #dialog-center td .dialog-alert .select:hover {
-	/*background-image: url(../img/bg.png);*/
-	background-repeat: no-repeat;
-	background-position: center;
-	background-size: 350px 120px;
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-cancel:active,
-#dialog-holder #dialog-center td .dialog-alert .dialog-confirm:active,
-#dialog-holder #dialog-center td .dialog-alert .select:active {
-	box-shadow: inset 0 1px 0 rgba(0, 0, 0, .1)
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-cancel.dialog-confirm,
-#dialog-holder #dialog-center td .dialog-alert .dialog-confirm.dialog-confirm {
-	/*background-image: url(../img/bg.png);*/
-	background-repeat: no-repeat;
-	background-position: center;
-	background-size: 350px 120px;
-	color: #f8f8f8;
-	margin-bottom: 10px
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-cancel.dialog-confirm:hover,
-#dialog-holder #dialog-center td .dialog-alert .dialog-confirm.dialog-confirm:hover {
-	/*background-image: url(../img/bg.png);*/
-	background-repeat: no-repeat;
-	background-position: center;
-	background-size: 350px 120px;
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-cancel.dialog-cancel+.dialog-confirm,
-#dialog-holder #dialog-center td .dialog-alert .dialog-confirm.dialog-cancel+.dialog-confirm {
-	margin-top: 5px
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-close {
-	position: absolute;
-	top: 15px;
-	right: 15px;
-	margin-bottom: 10px;
-	margin-bottom: -5px;
-	cursor: pointer;
-	line-height: 10px;
-	padding: 5px;
-	font-size: 24px;
-	opacity: .5;
-	transition: opacity .25s;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
-	-webkit-transform: translateZ(0)
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-close:hover {
-	opacity: 1
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-close:before {
-	content: "";
-	position: absolute;
-	top: -15px;
-	left: -15px;
-	right: -15px;
-	bottom: -15px
-}
-
-#dialog-holder #dialog-center td .dialog-alert .dialog-clearFloat {
-	clear: both;
-	width: 100%;
-	height: 1px;
-	display: block
-}
-
-@media (max-width: 1920px) {
-
-
-	#dialog-holder #dialog-center td .dialog-alert {
-
-		left: 160px;
-
-	}
-
-
+.dialog-max-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
 }
