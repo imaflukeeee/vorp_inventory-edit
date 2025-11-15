@@ -1602,14 +1602,19 @@ function InventoryService.MoveToCustom(obj)
 	local jobPerm = { data = tableJobs, job = job, grade = grade }
 	local charidPerm = { data = tableCharIds, charid = sourceCharIdentifier }
 	local CanMove = InventoryService.DoesHavePermission(invId, jobPerm, charidPerm)
-	local IsBlackListed = InventoryService.CheckIsBlackListed(invId, string.lower(item.name)) -- lower so we can checkitems and weapons
+	local IsAllowed = InventoryService.CheckIsBlackListed(invId, string.lower(item.name)) -- lower so we can checkitems and weapons
 
+	-- Debug logging (สามารถลบออกได้เมื่อตรวจสอบเสร็จแล้ว)
+	if Config.DevMode then
+		print(string.format("[DEBUG] MoveToCustom - invId: %s, item: %s, CanMove: %s, IsAllowed: %s", 
+			invId, item.name, tostring(CanMove), tostring(IsAllowed)))
+	end
 
 	if not CanProceed(item, amount, sourceIdentifier, sourceName) then
 		return
 	end
 
-	if not IsBlackListed then
+	if not IsAllowed then
 		return Core.NotifyObjective(_source, T.itemBlackListed, 5000)
 	end
 

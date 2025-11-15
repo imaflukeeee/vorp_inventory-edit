@@ -526,4 +526,33 @@ function inventorySetup(items) {
             $("#inventoryElement").append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
         }
     }
+    
+    // [NEW] ตั้งค่า draggable สำหรับ main inventory items (เมื่อมี secondary inventory เปิดอยู่)
+    if (type != "main") {
+        $('#inventoryElement .item-card[data-inventory="main"]').draggable({
+            helper: function() {
+                // สร้าง helper ที่เป็นแค่รูปภาพ
+                const itemImg = $(this).find('img').clone();
+                const helperDiv = $('<div class="drag-helper"></div>');
+                helperDiv.append(itemImg);
+                return helperDiv;
+            },
+            appendTo: 'body',
+            zIndex: 99999,
+            revert: 'invalid',
+            cursor: 'move',
+            cursorAt: { top: 35, left: 35 },
+            start: function (event, ui) {
+                if (disabled) return false;
+                stopTooltip = true;
+                itemData = $(this).data("item");
+                itemInventory = $(this).data("inventory");
+                $(this).addClass('dragging-item'); 
+            },
+            stop: function () {
+                stopTooltip = false;
+                $(this).removeClass('dragging-item'); 
+            }
+        });
+    }
 }

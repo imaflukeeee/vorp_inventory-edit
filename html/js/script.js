@@ -248,10 +248,18 @@ window.addEventListener('message', function (event) {
 
             if (type != "main") {
                 $('.item-card').draggable({
-                    helper: 'clone',
+                    helper: function() {
+                        // สร้าง helper ที่เป็นแค่รูปภาพ
+                        const itemImg = $(this).find('img').clone();
+                        const helperDiv = $('<div class="drag-helper"></div>');
+                        helperDiv.append(itemImg);
+                        return helperDiv;
+                    },
                     appendTo: 'body',
                     zIndex: 99999,
                     revert: 'invalid',
+                    cursor: 'move',
+                    cursorAt: { top: 35, left: 35 },
                     start: function (event, ui) {
                         if (disabled) return false;
                         stopTooltip = true;
@@ -282,7 +290,11 @@ window.addEventListener('message', function (event) {
                 }
             }
             
-            secondarySetCurrentCapacity(totalItems, totalWeight.toFixed(2)); 
+            // ส่งจำนวน items ทั้งหมดและน้ำหนักไปอัปเดต slots display
+            // ใช้ setTimeout เพื่อให้ DOM อัปเดตเสร็จก่อน
+            setTimeout(function() {
+                secondarySetCurrentCapacity(totalItems, totalWeight.toFixed(2)); 
+            }, 100);
             break;
 
         case "nearPlayers": 

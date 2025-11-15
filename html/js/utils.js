@@ -38,17 +38,40 @@ function secondarySetTitle(title) {
 }
 
 /**
- * [MODIFIED] (ข้อ 10) ลบ Logic การอัปเดต UI น้ำหนักออก
+ * [MODIFIED] แสดงความจุของ Secondary Inventory (แสดงเป็น Slots เหมือน vorp_banking)
  */
 function secondarySetCurrentCapacity(cap, weight) {
-    // [REMOVED] ลบการอัปเดต UI น้ำหนัก/Progress Bar
+    const capacityElement = $("#secondary-capacity");
+    const capacityText = $("#secondary-capacity-text");
     
-    // เรายังคงเก็บค่า Global ไว้เผื่อ Script อื่นเรียกใช้ (ถ้ามี)
-    if (weight != null && window.SecondaryWeight != null) {
-        // (No UI Update)
-    } 
-    else if (window.SecondaryCapacity != null) {
-        // (No UI Update)
+    // นับจำนวนไอเท็มที่ใช้อยู่ (นับจากจำนวน items ใน inventory)
+    const itemCards = $('#secondInventoryElement .item-card[data-inventory="second"]');
+    const usedSlots = itemCards.length;
+    
+    if (window.SecondaryWeight != null && weight != null) {
+        // แสดงน้ำหนัก (Weight-based)
+        const currentWeight = parseFloat(weight).toFixed(2);
+        const maxWeight = parseFloat(window.SecondaryWeight).toFixed(2);
+        const weightPercent = ((parseFloat(currentWeight) / parseFloat(window.SecondaryWeight)) * 100).toFixed(0);
+        
+        capacityText.html(`${currentWeight} / ${maxWeight} ${Config.WeightMeasure || 'kg'} (${weightPercent}%)`);
+        capacityElement.show();
+    } else if (window.SecondaryCapacity != null) {
+        // แสดงจำนวน Slots (Capacity-based) - เหมือน vorp_banking
+        const maxCapacity = parseInt(window.SecondaryCapacity) || 0;
+        const slotsText = maxCapacity > 0 ? `${usedSlots} / ${maxCapacity} Slots` : `${usedSlots} Slots`;
+        capacityText.html(slotsText);
+        capacityElement.show();
+    } else if (cap != null) {
+        // ถ้าไม่มี maxCapacity แต่มี cap จาก server
+        const maxSlots = parseInt(cap) || 0;
+        const slotsText = maxSlots > 0 ? `${usedSlots} / ${maxSlots} Slots` : `${usedSlots} Slots`;
+        capacityText.html(slotsText);
+        capacityElement.show();
+    } else {
+        // แสดงแค่จำนวน slots ที่ใช้ (ถ้าไม่มีข้อมูล max capacity)
+        capacityText.html(`${usedSlots} Slots`);
+        capacityElement.show();
     }
 }
 
