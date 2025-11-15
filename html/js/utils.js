@@ -258,6 +258,38 @@ function closeCharacterSelection() {
     $("#character-selection").hide();
 }
 
+function showCustomModal(title, message, showInput, confirmCallback) {
+    const modal = $("#confirmation-modal");
+    $("#modal-title").text(title);
+    $("#modal-message").text(message);
+    
+    const inputGroup = $("#modal-amount-container");
+    if (showInput) {
+        inputGroup.show();
+        $("#modal-amount-input").val(1).focus();
+    } else {
+        inputGroup.hide();
+    }
+
+    modal.addClass("active");
+
+    // ลบ Event เดิมออกก่อน
+    $("#modal-confirm-btn").off('click');
+    $("#modal-cancel-btn").off('click');
+
+    // ผูก Event ใหม่
+    $("#modal-confirm-btn").on('click', function() {
+        modal.removeClass("active");
+        const amount = showInput ? parseInt($("#modal-amount-input").val()) : 1;
+        confirmCallback(amount);
+    });
+
+    $("#modal-cancel-btn").on('click', function() {
+        modal.removeClass("active");
+        confirmCallback(0); // ส่ง 0 กลับไปเพื่อยกเลิก
+    });
+}
+
 function dropGetHowMany(item, type, hash, id, metadata, count, degradation) {
     if (type != "item_weapon") {
         if (count && count === 1) {

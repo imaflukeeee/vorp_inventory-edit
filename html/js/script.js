@@ -105,7 +105,6 @@ function moveInventory(inv) {
     }
 }
 
-
 // [MODIFIED] นี่คือส่วนที่รับข้อมูลจาก LUA
 window.addEventListener('message', function (event) {
     const data = event.data; // [NEW]
@@ -189,42 +188,66 @@ window.addEventListener('message', function (event) {
 
             $("#inventoryHud").fadeIn();
             
-            type = data.type; 
-            
-            // [NEW] Logic สำหรับเช็คประเภท Inventory และส่งค่าไปยัง initiateSecondaryInventory
-            const typeMap = {
-                "player": "playerId",
-                "custom": "customId",
-                "horse": "horseid",
-                "cart": "wagonid",
-                "house": "houseId",
-                "hideout": "hideoutid",
-                "bank": "bankId",
-                "clan": "clanid",
-                "store": "StoreId",
-                "steal": "stealid",
-                "Container": "Containerid"
-            };
-            
-            // Loop ตรวจสอบ type
-            for (let key in typeMap) {
-                if (data.type === key) {
-                    // [FIX] แก้ไขการดึง ID ให้ถูกต้อง
-                    window[typeMap[key]] = data[key] ?? data.id ?? data.horseid ?? data.wagonid ?? data.houseId ?? data.hideoutId ?? data.bankId ?? data.clanid ?? data.StoreId ?? data.stealid ?? data.Containerid ?? null;
-                    
-                    // เรียกใช้ฟังก์ชันเปิด Inventory รอง
-                    initiateSecondaryInventory(data.title, data.capacity, data.weight ?? undefined);
-                    break; 
-                }
-            }
+        type = event.data.type
+
+        if (event.data.type == "player") {
+            playerId = event.data.id;
+
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+
+        if (event.data.type == "custom") {
+            customId = event.data.id;
+            initiateSecondaryInventory(event.data.title, event.data.capacity, event.data.weight)
+        }
+
+        if (event.data.type == "horse") {
+            horseid = event.data.horseid;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+
+        if (event.data.type == "cart") {
+            wagonid = event.data.wagonid;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+
+        if (event.data.type == "house") {
+            houseId = event.data.houseId;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+        if (event.data.type == "hideout") {
+            hideoutId = event.data.hideoutId;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+        if (event.data.type == "bank") {
+            bankId = event.data.bankId;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+        if (event.data.type == "clan") {
+            clanid = event.data.clanid;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+        if (event.data.type == "store") {
+            StoreId = event.data.StoreId;
+            geninfo = event.data.geninfo;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+        if (event.data.type == "steal") {
+            stealid = event.data.stealId;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
+        if (event.data.type == "Container") {
+            Containerid = event.data.Containerid;
+            initiateSecondaryInventory(event.data.title, event.data.capacity)
+        }
 
             disabled = false; // [KEPT]
             
-            if (data.autofocus == true) {
+            /*if (data.autofocus == true) {
                 $(document).on('keydown', function (event) {
                     // ( ... )
                 });
-            }
+            }*/
             break;
         
         case "hide": 

@@ -38,6 +38,7 @@ function PostAction(eventName, itemData, id, propertyName, info) {
             required: true,
             item: itemData,
             type: itemData.type,
+            maxValue: itemData.count,
             input: { type: "number", autofocus: "true" },
             validate: function (value, item, type) {
                 if (!value || value <= 0 || value > Config.MaxItemTransferAmount || !isInt(value)) {
@@ -121,6 +122,7 @@ function initSecondaryInventoryHandlers() {
                         }
                         dialog.prompt({
                             title: LANGUAGE.prompttitle, button: LANGUAGE.promptaccept, required: true, item: itemData, type: itemData.type,
+                            maxValue: itemData.count,
                             input: { type: "number", autofocus: "true" },
                             validate: function (value) {
                                 if (!value) { dialog.close(); return; }
@@ -268,7 +270,7 @@ function loadCustomInventoryItem(item, index) {
     const group = item.type != "item_weapon" ? (!item.group ? 1 : item.group) : 5;
 
     const { tooltipData, degradation, image, label, weight, description } = getItemMetadataInfo(item, true); // true = custom
-    
+
     const imageUrl = imageCache[image] || 'img/items/placeholder.png';
     // const itemWeight = (weight * count).toFixed(2); // [REMOVED] (ข้อ 6)
 
@@ -276,8 +278,9 @@ function loadCustomInventoryItem(item, index) {
     let qtyDisplay = "";
     if (item.type == "item_weapon") {
         qtyDisplay = "x1";
-    } else if (limit > 1) { // Stackable
-        qtyDisplay = `${count} / ${limit}`;
+    } else if (limit > 0) { // Stackable
+        //qtyDisplay = `${count} / ${limit}`;
+        qtyDisplay = `${count}`;
     } else if (count > 1) { // Non-stackable
         qtyDisplay = `x${count}`;
     }
@@ -303,6 +306,7 @@ function loadCustomInventoryItem(item, index) {
  * [MODIFIED] ฟังก์ชันหลักในการวาด Inventory (หน้าต่างรอง)
  */
 function secondInventorySetup(items, info) {
+    $("#inventoryElement").html("");
     $("#secondInventoryElement").html("").data("info", info);
     var divCount = 0; // [FIX] รีเซ็ตตัวนับ
 

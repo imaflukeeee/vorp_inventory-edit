@@ -153,13 +153,13 @@ function action(type, param, inv) {
         const activeButton = document.querySelector(`${hudId} .tab[data-param="${param}"][data-type="itemtype"]`);
         if (activeButton) activeButton.classList.add('active');
 
-        if (param in Actions) {
+        /*if (param in Actions) {
             const action = Actions[param];
             showItemsByType(action.types, inv);
         } else {
             const defaultAction = Actions['all'];
             showItemsByType(defaultAction.types, inv);
-        }
+        }*/
     } 
 }
 
@@ -169,12 +169,12 @@ function action(type, param, inv) {
 function showItemsByType(itemTypesToShow, inv) {
     let itemDiv = 0;
     let itemEmpty = 0;
-
+    $(`#${inv} .item-card[data-group="0"]`).remove();
     // [FIX 1] ดึงค่าจาก Search Bar ที่ถูกต้อง
     // inv คือ "inventoryElement" หรือ "secondInventoryElement"
     let searchInputId = (inv === "inventoryElement") ? "#main-search" : "#second-search";
     let searchText = $(searchInputId).val().toLowerCase().trim();
-
+    
     $(`#${inv} .item-card`).each(function () {
         const group = $(this).data("group");
         const itemLabel = $(this).data("label") ? $(this).data("label").toLowerCase() : "";
@@ -199,11 +199,6 @@ function showItemsByType(itemTypesToShow, inv) {
     // [MODIFIED] เติมช่องว่าง (โค้ดเดิมจาก invScript.js)
     const minSlots = 40;
     if (itemDiv < minSlots) {
-        if (itemEmpty > 0) {
-            for (let i = 0; i < itemEmpty; i++) {
-                $(`#${inv} .item-card[data-group="0"]`).remove();
-            }
-        }
         const emptySlots = minSlots - itemDiv;
         for (let i = 0; i < emptySlots; i++) {
             $(`#${inv}`).append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
@@ -390,7 +385,7 @@ function inventorySetup(items) {
             }
         };
     }
-
+    action('itemtype', 'all', 'inventoryElement');
     // [ADD-REVISED] ผูก Logic ไอเท็มพิเศษ (Gunbelt, Money, Gold)
     const gunbelt_label = LANGUAGE.gunbeltlabel;
     const gunbelt_desc = LANGUAGE.gunbeltdescription;

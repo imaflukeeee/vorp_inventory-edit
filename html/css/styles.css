@@ -343,12 +343,11 @@ body {
   margin-top: 25px;
   border-top: 1px solid var(--border-color);
   padding-top: 25px;
-  display: flex;
+  display: flex; /* [MODIFIED] ใช้ Flexbox */
   align-items: center;
-  justify-content: space-between;
-    /* gap: 20px; */ /* <-- ลบอันนี้ */
-  column-gap: 20px; /* [FIX] ช่องว่าง ซ้าย-ขวา */
-  row-gap: 1px;     /* [FIX] ช่องว่าง บน-ล่าง (แก้เป็น 5px ตามที่คุณต้องการ) */
+  justify-content: flex-start; /* [MODIFIED] เริ่มจากซ้ายสุด */
+  column-gap: 20px;
+  row-gap: 15px; /* [FIX] เพิ่ม row-gap เพื่อแยกแถว */
   flex-wrap: wrap;
   position: relative; 
 }
@@ -357,6 +356,7 @@ body {
   flex-basis: 300px;
   flex-grow: 1;
   min-width: 0;
+  order: 2; /* [NEW] จัดให้อยู่ตำแหน่งที่ 2 */
 }
 
 .item-info h2 {
@@ -395,11 +395,9 @@ body {
   display: flex;
   gap: 15px;
   align-items: center;
-  /* [NEW] (ข้อ 4) จัดให้อยู่ตรงกลาง (Absolute Center) */
-  position: absolute;
-  left: 50%;
-  bottom: 25px; /* Match footer padding */
-  transform: translateX(-50%);
+  /* [MODIFIED] ลบ position: absolute ออกทั้งหมด */
+  margin-right: auto; /* [NEW] ดันไปทางซ้ายสุด (ก่อน item-info) */
+  order: 1; /* [NEW] จัดให้อยู่ตำแหน่งที่ 1 (หลัง item-info ในโค้ด) */
 }
 
 /* [REMOVED] (ข้อ 10) ซ่อนส่วนน้ำหนัก */
@@ -439,6 +437,7 @@ body {
   display: flex;
   gap: 10px;
   margin-left: auto; 
+  order: 3; /* [NEW] จัดให้อยู่ตำแหน่งที่ 3 */
 }
 
 .btn {
@@ -617,7 +616,18 @@ body {
     overflow-x: auto; /* ถ้า tab เยอะไปให้เลื่อนได้ */
 }
 
-/* แถบค้นหา (Search Bar) */
+#secondInventoryHud .inventory-controls {
+    justify-content: center; /* จัดให้คอนเทนเนอร์อยู่ตรงกลาง */
+}
+
+#secondInventoryHud .inventory-tabs {
+    /* ให้ Tabs มีพื้นที่กว้างพอที่จะอยู่ตรงกลางใน Flex container */
+    flex-grow: 1; 
+    justify-content: center; /* จัดเรียง Tabs ภายใน Nav ให้อยู่ตรงกลาง */
+    margin: 0 10px; /* เพิ่ม Margin เล็กน้อย */
+}
+
+/* แถบค้นหา (Search Bar) 1 */
 .search-bar {
     display: flex;
     align-items: center;
@@ -642,14 +652,42 @@ body {
     color: var(--text-dim);
 }
 
+/* แถบค้นหา (Search Bar) 2 */
+.search-bar2 {
+    display: none;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0 15px;
+    margin-left: 20px; /* เว้นระยะห่างจาก Tabs */
+}
+
+.search-bar2 input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 0;
+    width: 180px; /* กำหนดความกว้างแถบค้นหา */
+}
+.search-bar2 input::placeholder {
+    color: var(--text-dim);
+}
 
 /* --- [NEW] 10. แถบปรับ Opacity --- */
 .opacity-slider-container {
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* [FIX] จัดชิดขวา */
-    gap: 10px; /* [NEW] เพิ่มช่องว่างระหว่าง Label กับ Slider */
-    width: 100%; /* [FIX] ขยายเต็มความกว้าง (ใต้ปุ่ม) */
+    justify-content: flex-end; 
+    gap: 10px; 
+    width: 100%; 
+    order: 4; /* [NEW] จัดให้อยู่แถวใหม่ด้านล่างสุด */
+    padding-top: 15px; /* [NEW] เว้นระยะจากปุ่ม Action */
+    border-top: 1px solid var(--border-color); /* [NEW] ขีดเส้นแบ่งให้ชัดเจน */
+    margin-top: 15px;
 }
 
 .opacity-slider-container label {
@@ -696,3 +734,4 @@ body {
     transition: opacity .2s;
     cursor: pointer;
 }
+
