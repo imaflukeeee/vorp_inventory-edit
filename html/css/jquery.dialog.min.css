@@ -1,11 +1,11 @@
 /* =========================================================
    jQuery Dialog UI — Dark Minimalist Theme (Final Revision)
    Author: Warakon Custom Version (Modified by Gemini)
-   Updated: 2025-11-13
+   Updated: 2025-11-16
    ========================================================= */
 
 /* === IMPORT FONT === */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pridi:wght@400;500;600;700&display=swap');
 
 /* === OVERLAY === */
 #dialog-overlay {
@@ -35,7 +35,7 @@
     height: 100%;
     z-index: 1011;
     cursor: default;
-    font-family: "Inter", sans-serif;
+    font-family: "Pridi", serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     display: flex;
@@ -77,7 +77,7 @@
     transition: transform .4s ease, opacity .4s ease;
     display: none;
     z-index: 999;
-    font-family: "Inter", sans-serif;
+    font-family: "Pridi", serif;
 }
 
 /* === Animation === */
@@ -97,7 +97,7 @@
 .dialog-title {
     padding: 0 5px 15px 5px;
     line-height: 1.2;
-    font-size: 20px;
+    font-size: 22px; /* ⬅️ ปรับขนาด */
     font-weight: 600;
     color: #f0f0f0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -113,7 +113,7 @@
     max-width: 370px;
     margin: 0 auto;
     color: #999;
-    font-size: 14px;
+    font-size: 15px; /* ⬅️ ปรับขนาด */
 }
 
 /* === INPUT FIELD === */
@@ -132,9 +132,9 @@
     background: rgba(255, 255, 255, 0.03);
     outline: 0;
     width: 100%;
-    font-size: 14px;
+    font-size: 15px; /* ⬅️ ปรับขนาด */
     color: #f0f0f0;
-    font-family: "Inter", sans-serif;
+    font-family: "Pridi", serif;
     transition: all 0.2s ease-in-out;
     margin-bottom: 25px; /* ✅ เพิ่มระยะห่างจากปุ่ม */
 }
@@ -162,8 +162,8 @@
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s ease-in-out;
-    font-size: 14px;
-    font-family: "Inter", sans-serif;
+    font-size: 15px; /* ⬅️ ปรับขนาด */
+    font-family: "Pridi", serif;
     display: inline-block; 
     margin: 0;
     box-shadow: none;
@@ -209,8 +209,8 @@
     font-weight: 500;
     color: #f0f0f0;
     text-align: left; 
-    font-size: 14px;
-    font-family: "Inter", sans-serif;
+    font-size: 15px; /* ⬅️ ปรับขนาด */
+    font-family: "Pridi", serif;
     transition: all 0.2s ease-in-out;
 }
 .dialog-alert .select:hover {
@@ -270,8 +270,8 @@
     border-radius: 8px;
     cursor: pointer;
     font-weight: 500;
-    font-size: 14px;
-    font-family: "Inter", sans-serif;
+    font-size: 15px; /* ⬅️ ปรับขนาด */
+    font-family: "Pridi", serif;
     transition: all 0.2s ease-in-out;
     height: 38px; /* Match height of input field */
     line-height: 18px; /* Vertically center text inside button */

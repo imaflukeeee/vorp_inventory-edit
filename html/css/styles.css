@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pridi:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --font-main: "Kanit", sans-serif;
+  --font-main: "Pridi", serif;
   --bg-glass: rgba(20, 20, 20, 0.92);
   --bg-dark: #0A0A0A;
   --bg-card: rgba(255, 255, 255, 0.03); 
@@ -74,7 +74,7 @@ body {
 .inventory-header h1 {
   font-size: 28px;
   font-weight: 700;
-  letter-spacing: 5px;
+  letter-spacing: 3px; /* ⬅️ ปรับปรุง */
   text-transform: uppercase;
   color: var(--text-main);
   margin-top: 5px; 
@@ -734,4 +734,3 @@ body {
     transition: opacity .2s;
     cursor: pointer;
 }
-
