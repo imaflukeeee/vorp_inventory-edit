@@ -13,6 +13,12 @@ Actions = {
         img = "weapon.png" -- [NEW]
     },
 
+    favorites = {
+        types = { "favorites" }, -- ใช้ keyword พิเศษสำหรับตรวจสอบใน JS
+        desc = "Your favorite items",
+        img = "favorite.png" -- ใช้รูป favorite.png ตามที่ต้องการ
+    },
+
     -- 3. Consumables (รวม types 2 และ 3)
     consumables = { 
         types = { 0, 2, 3 }, 

@@ -1,4 +1,9 @@
 let imageCache = {};
+let favoriteItems = JSON.parse(localStorage.getItem('vorp_inventory_favorites')) || [];
+
+function updateFavoritesStorage() {
+    localStorage.setItem('vorp_inventory_favorites', JSON.stringify(favoriteItems));
+}
 
 /**
  * [MODIFIED] Preload images (ทำให้การโหลดรูปภาพมีความยืดหยุ่นมากขึ้น)
@@ -153,59 +158,80 @@ function action(type, param, inv) {
         const activeButton = document.querySelector(`${hudId} .tab[data-param="${param}"][data-type="itemtype"]`);
         if (activeButton) activeButton.classList.add('active');
 
-        /*if (param in Actions) {
+        // [FIXED] ต้องเรียก showItemsByType ตรงนี้
+        if (param in Actions) {
             const action = Actions[param];
             showItemsByType(action.types, inv);
         } else {
             const defaultAction = Actions['all'];
             showItemsByType(defaultAction.types, inv);
-        }*/
+        }
     } 
+    // ... (ส่วนอื่น ๆ ของ action function ถ้ามี)
 }
 
 /**
  * [MODIFIED] กรองไอเท็ม (ใช้ .item-card)
  */
+/**
+ * [FINAL FIXED] กรองไอเท็ม (ใช้ .item-card)
+ */
+/**
+ * [FINAL FIXED] กรองไอเท็ม (ใช้ .item-card)
+ */
 function showItemsByType(itemTypesToShow, inv) {
     let itemDiv = 0;
-    let itemEmpty = 0;
+    
+    // 1. ลบช่องว่างเก่าทั้งหมดออกก่อนเสมอ
     $(`#${inv} .item-card[data-group="0"]`).remove();
-    // [FIX 1] ดึงค่าจาก Search Bar ที่ถูกต้อง
-    // inv คือ "inventoryElement" หรือ "secondInventoryElement"
+    
     let searchInputId = (inv === "inventoryElement") ? "#main-search" : "#second-search";
     let searchText = $(searchInputId).val().toLowerCase().trim();
     
-    $(`#${inv} .item-card`).each(function () {
-        const group = $(this).data("group");
-        const itemLabel = $(this).data("label") ? $(this).data("label").toLowerCase() : "";
+    const isFavoriteTab = itemTypesToShow.includes("favorites");
 
-        // [FIX 2] ตรวจสอบเงื่อนไข 2 อย่าง: Tab และ Search
-        let matchesTab = itemTypesToShow.length === 0 || itemTypesToShow.includes(group);
+    $(`#${inv} .item-card`).each(function () {
+        const itemCard = $(this);
+        const group = itemCard.data("group"); 
+        const itemName = itemCard.data("name"); 
+        const itemLabel = itemCard.data("label") ? itemCard.data("label").toLowerCase() : "";
+        const numGroup = Number(group); 
+
+        // 2. ข้าม/ซ่อน ช่องว่างเก่าที่อาจหลงเหลือ
+        if (numGroup === 0) {
+            itemCard.hide(); 
+            return; 
+        }
+
+        // --- Logic สำหรับไอเท็มจริง (numGroup > 0) ---
+        let matchesTab = false;
+        if (isFavoriteTab) {
+            matchesTab = favoriteItems.includes(itemName);
+        } else {
+            matchesTab = itemTypesToShow.includes(numGroup);
+        }
+
         let matchesSearch = itemLabel.includes(searchText);
 
-        // [FIX 3] ต้องตรงกับ Tab *และ* (เป็นช่องว่าง [data-group="0"] หรือ ตรงกับที่ค้นหา)
-        if (matchesTab && (group === 0 || matchesSearch)) {
-            if (group != 0) {
-                itemDiv = itemDiv + 1;
-            } else {
-                itemEmpty = itemEmpty + 1;
-            }
-            $(this).show();
+        // 3. แสดง/ซ่อน
+        if (matchesTab && matchesSearch) {
+            itemCard.show();
+            itemDiv = itemDiv + 1;
         } else {
-            $(this).hide();
+            itemCard.hide();
         }
     });
 
-    // [MODIFIED] เติมช่องว่าง (โค้ดเดิมจาก invScript.js)
+    // [FINAL FIX] เติมช่องว่าง (Empty Slots) เพื่อสร้าง Grid Layout
     const minSlots = 40;
-    if (itemDiv < minSlots) {
+    // [แก้ไข]: ลบเงื่อนไข !isFavoriteTab ออก เพื่อให้ช่องว่างถูกสร้างเสมอ (สำหรับ Layout)
+    if (itemDiv < minSlots) { 
         const emptySlots = minSlots - itemDiv;
         for (let i = 0; i < emptySlots; i++) {
             $(`#${inv}`).append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
         }
     }
 }
-
 
 /**
  * [MODIFIED] สร้างไอเท็ม 1 ชิ้น (ข้อ 1)
@@ -234,14 +260,19 @@ function loadInventoryItem(item, index) {
         qtyDisplay = `x${count}`;
     }
     // ถ้า count <= 1 (สำหรับ item ทั่วไป) qtyDisplay จะยังคงเป็น "" (ไม่แสดงผล)
-
+    const isFav = favoriteItems.includes(item.name);
+    const favDisplay = isFav ? 'block' : 'none';
     // [MODIFIED] (ข้อ 1, 5, 6, 7, 9)
     const itemHtml = `
-        <div class="item-card" id="item-${index}" data-group='${group}' data-label='${label}' data-inventory="main" data-tooltip="Weight: ${weight} ${Config.WeightMeasure} ${degradation}">
+        <div class="item-card" id="item-${index}" data-name="${item.name}" data-group='${group}' data-label='${label}' data-inventory="main" data-tooltip="Weight: ${weight} ${Config.WeightMeasure} ${degradation}">
             <img src="${imageUrl}" alt="${label}" onerror="fallbackImg(this)">
             
             ${qtyDisplay ? `<p class="item-qty">${qtyDisplay}</p>` : ""}
-            
+
+            <div class="favorite-icon" style="display: ${favDisplay}; position: absolute; top: 2px; right: 2px; z-index: 10;">
+                <img src="img/itemtypes/favorite.png" style="width: 12px; height: 12px;">
+            </div>
+
             <p class="item-name">${label}</p>
             
             <div class="equipped-icon" style="display: ${!item.used && !item.used2 ? "none" : "block"};"></div>
@@ -255,6 +286,9 @@ function loadInventoryItem(item, index) {
 }
 
 
+/**
+ * [HEAVILY MODIFIED] ผูก Event ให้กับไอเท็ม (คลิก, ดับเบิลคลิก, ปุ่ม Action)
+ */
 /**
  * [HEAVILY MODIFIED] ผูก Event ให้กับไอเท็ม (คลิก, ดับเบิลคลิก, ปุ่ม Action)
  */
@@ -364,6 +398,33 @@ function addData(index, item) {
                     })
                 );
             });
+        }
+    });
+
+    // [NEW] คลิกขวาเพื่อ Add/Remove Favorite
+    itemElement.on('contextmenu', function(e) {
+        e.preventDefault(); // ปิดเมนูคลิกขวาของ Browser
+
+        const name = item.name;
+        const idx = favoriteItems.indexOf(name);
+        // ใช้ .find('.favorite-icon') เพื่ออ้างอิงถึงไอคอนที่เพิ่มใน loadInventoryItem
+        const favIcon = $(this).find('.favorite-icon'); 
+
+        if (idx > -1) {
+            // ถ้ามีอยู่แล้ว ให้ลบออก
+            favoriteItems.splice(idx, 1);
+            favIcon.hide();
+        } else {
+            // ถ้ายังไม่มี ให้เพิ่มเข้าไป
+            favoriteItems.push(name);
+            favIcon.show();
+        }
+        updateFavoritesStorage(); // บันทึกลง LocalStorage
+
+        // ถ้ากำลังเปิดหน้า Favorites อยู่ ให้รีเฟรชหน้า
+        const activeTab = $('#inventoryHud .tab.active').data('param');
+        if (activeTab === 'favorites') {
+             action('itemtype', 'favorites', 'inventoryElement');
         }
     });
 }
