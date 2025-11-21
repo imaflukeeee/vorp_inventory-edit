@@ -249,7 +249,7 @@ function showItemsByType(itemTypesToShow, inv) {
     if (inv === "inventoryElement") {
         $('#inventoryElement .item-card[data-inventory="main"]').draggable({
             helper: function() {
-                const itemImg = $(this).find('> img').clone(); 
+                const itemImg = $(this).find('img').eq(0).clone();
                 const helperDiv = $('<div class="drag-helper"></div>');
                 helperDiv.append(itemImg);
                 return helperDiv;
@@ -298,7 +298,7 @@ function loadInventoryItem(item, index) {
     const favDisplay = isFav ? 'block' : 'none';
     const itemHtml = `
         <div class="item-card" id="item-${index}" data-name="${item.name}" data-group='${group}' data-label='${label}' data-inventory="main" data-tooltip="Weight: ${weight} ${Config.WeightMeasure} ${degradation}">
-            <img src="${imageUrl}" alt="${label}" onerror="fallbackImg(this)">
+            <img class="item-image" src="${imageUrl}" alt="${label}" onerror="fallbackImg(this)">
             
             ${qtyDisplay ? `<p class="item-qty">${qtyDisplay}</p>` : ""}
 
@@ -569,7 +569,7 @@ function inventorySetup(items, activeTab) {
     if (type != "main") {
         $('#inventoryElement .item-card[data-inventory="main"]').draggable({
             helper: function() {
-                const itemImg = $(this).find('> img').clone(); 
+                const itemImg = $(this).find('img').eq(0).clone();
                 const helperDiv = $('<div class="drag-helper"></div>');
                 helperDiv.append(itemImg);
                 return helperDiv;

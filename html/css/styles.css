@@ -746,3 +746,11 @@ body {
     min-height: 570px !important; 
     max-height: 570px !important; 
 }
+
+.drag-helper img[src*="favorite"] {
+    display: none !important;
+}
+
+.drag-helper .favorite-icon {
+    display: none !important;
+}
