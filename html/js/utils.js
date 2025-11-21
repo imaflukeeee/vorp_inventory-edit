@@ -44,10 +44,26 @@ function secondarySetCurrentCapacity(cap, weight) {
     const capacityElement = $("#secondary-capacity");
     const capacityText = $("#secondary-capacity-text");
     
-    // นับจำนวนไอเท็มที่ใช้อยู่ (นับจากจำนวน items ใน inventory)
+    // [MODIFIED] Calculate total item quantity (Amount) instead of just stack count (Slots)
     const itemCards = $('#secondInventoryElement .item-card[data-inventory="second"]');
-    const usedSlots = itemCards.length;
+    let usedAmount = 0; 
     
+    // วนลูปผ่าน Item Card ทั้งหมดเพื่อรวมจำนวนชิ้น
+    itemCards.each(function() {
+        // [CRITICAL FIX]: เข้าถึงข้อมูล Item ที่ถูกผูกไว้ใน addData/loadInventoryItem
+        const itemData = $(this).data("item");
+        if (itemData && itemData.count) {
+            // รวมจำนวนชิ้นใน Stack (เช่น 10 สำหรับ Water x 10)
+            usedAmount += itemData.count;
+        } else {
+            // หากไม่มีข้อมูลผูกไว้ (ไม่ควรเกิดขึ้นกับ Item จริง) ให้นับเป็น 1 Slot
+            usedAmount += 1; 
+        }
+    });
+
+    // ใช้ปริมาณชิ้นรวม (usedAmount) เป็นตัวเลขที่ใช้ไป
+    const currentNumerator = usedAmount; 
+
     if (window.SecondaryWeight != null && weight != null) {
         // แสดงน้ำหนัก (Weight-based)
         const currentWeight = parseFloat(weight).toFixed(2);
@@ -57,24 +73,25 @@ function secondarySetCurrentCapacity(cap, weight) {
         capacityText.html(`${currentWeight} / ${maxWeight} ${Config.WeightMeasure || 'kg'} (${weightPercent}%)`);
         capacityElement.show();
     } else if (window.SecondaryCapacity != null) {
-        // แสดงจำนวน Slots (Capacity-based) - เหมือน vorp_banking
+        // แสดงจำนวน Slots (Capacity-based)
         const maxCapacity = parseInt(window.SecondaryCapacity) || 0;
-        const slotsText = maxCapacity > 0 ? `${usedSlots} / ${maxCapacity} Slots` : `${usedSlots} Slots`;
+        // [MODIFIED] ใช้ currentNumerator (ปริมาณชิ้น) แทน usedSlots
+        const slotsText = maxCapacity > 0 ? `${currentNumerator} / ${maxCapacity} ช่อง` : `${currentNumerator} ช่อง`;
         capacityText.html(slotsText);
         capacityElement.show();
     } else if (cap != null) {
         // ถ้าไม่มี maxCapacity แต่มี cap จาก server
         const maxSlots = parseInt(cap) || 0;
-        const slotsText = maxSlots > 0 ? `${usedSlots} / ${maxSlots} Slots` : `${usedSlots} Slots`;
+        // [MODIFIED] ใช้ currentNumerator (ปริมาณชิ้น) แทน usedSlots
+        const slotsText = maxSlots > 0 ? `${currentNumerator} / ${maxSlots} ช่อง` : `${currentNumerator} ช่อง`;
         capacityText.html(slotsText);
         capacityElement.show();
     } else {
         // แสดงแค่จำนวน slots ที่ใช้ (ถ้าไม่มีข้อมูล max capacity)
-        capacityText.html(`${usedSlots} ช่อง`);
+        capacityText.html(`${currentNumerator} ช่อง`);
         capacityElement.show();
     }
 }
-
 /**
  * [MODIFIED] (ข้อ 10) ลบ Logic การอัปเดต UI น้ำหนักออก
  */
