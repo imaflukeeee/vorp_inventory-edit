@@ -117,26 +117,13 @@ function loadActionsConfig() {
 /**
  * [FIXED] สร้างปุ่ม Filter (Tabs) - (ใช้ 6 หมวดหมู่ใหม่ + Icons และเรียงตามลำดับ)
  */
-/**
- * [FINAL FIXED] สร้างปุ่ม Filter (Tabs) - ไม่สร้างปุ่มสำหรับ Secondary Inventory
- */
 function generateActionButtons(actionsConfig, containerId, inventoryContext, buttonClass) {
     const container = document.getElementById(containerId);
 
-    // [CRITICAL FIX] ถ้า Context คือ Secondary Inventory ให้ล้าง Container และหยุดทำงานทันที
-    if (inventoryContext === 'secondInventoryElement') {
-        if (container) {
-            container.innerHTML = ''; // ล้างปุ่มทั้งหมด
-        }
-        return; // หยุดการสร้างปุ่ม
-    }
-
-    // โค้ดเดิมสำหรับ Main Inventory
     if (container) {
         container.innerHTML = ''; 
         
-        // [MODIFIED] ใช้อาร์เรย์ desiredOrder ในการวนซ้ำแทน Object.keys()
-        // Note: โค้ดนี้ถูกปรับให้รวม Logic การเรียงลำดับที่คุณเคยทำไว้
+        // [NEW] กำหนดลำดับคีย์ (Tabs) ที่ต้องการตาม groups.lua
         const desiredOrder = [
             "all",
             "food",
@@ -145,12 +132,14 @@ function generateActionButtons(actionsConfig, containerId, inventoryContext, but
             "tools",
             "etc",
             "apparel",
-            "favorites" 
+            "favorites" // หมวดหมู่ Favorites ที่เพิ่มล่าสุด
         ];
 
+        // [MODIFIED] ใช้อาร์เรย์ desiredOrder ในการวนซ้ำแทน Object.keys()
         desiredOrder.forEach(key => {
             const action = actionsConfig[key];
             
+            // ตรวจสอบว่า action นั้นมีอยู่ใน actionsConfig จริง
             if (!action) return; 
 
             const button = document.createElement('button');
@@ -183,16 +172,10 @@ function action(type, param, inv) {
         const hudId = (inv === "inventoryElement") ? '#inventoryHud' : '#secondInventoryHud';
         
         document.querySelectorAll(`${hudId} .tab[data-type="itemtype"]`).forEach(btn => btn.classList.remove('active'));
-        
-        // [CRITICAL FIX] ถ้าทำงานในหน้าต่างรอง ให้บังคับพารามิเตอร์เป็น 'all' เสมอ
-        if (inv === "secondInventoryElement") {
-            param = 'all'; 
-        }
-
         const activeButton = document.querySelector(`${hudId} .tab[data-param="${param}"][data-type="itemtype"]`);
         if (activeButton) activeButton.classList.add('active');
 
-        // เรียก showItemsByType โดยใช้ Logic ของ 'all' เมื่ออยู่ในหน้าต่างรอง
+        // [FIXED] ต้องเรียก showItemsByType ตรงนี้
         if (param in Actions) {
             const action = Actions[param];
             showItemsByType(action.types, inv);
@@ -201,70 +184,76 @@ function action(type, param, inv) {
             showItemsByType(defaultAction.types, inv);
         }
     } 
+    // ... (ส่วนอื่น ๆ ของ action function ถ้ามี)
 }
 
 /**
- * [FINAL FIXED] กรองไอเท็ม (Aggressive Rerender - แก้ปัญหาช่องว่างจากการค้นหา)
+ * [MODIFIED] กรองไอเท็ม (ใช้ .item-card)
  */
 function showItemsByType(itemTypesToShow, inv) {
+    let itemDiv = 0;
     
     // 1. ตรวจสอบสถานะการค้นหา
     let searchInputId = (inv === "inventoryElement") ? "#main-search" : "#second-search";
     let searchText = $(searchInputId).val().toLowerCase().trim();
-    
     const isSearchActive = searchText.length > 0;
-    const isFavoriteTab = itemTypesToShow.includes("favorites");
+    
+    // 2. ลบช่องว่างเก่าทั้งหมดออกก่อนเสมอ
     const container = $(`#${inv}`);
-
-    // 2. [AGGRESSIVE RESET] ล้าง DOM ทั้งหมด
-    container.html(''); 
-
-    let itemDiv = 0;
+    container.find('.item-card[data-group="0"]').remove();
     
-    // 3. กรองและวาดใหม่จากข้อมูลที่เรียงแล้ว (window.CurrentItems)
-    if (window.CurrentItems && window.CurrentItems.length > 0) {
-        
-        const itemsToProcess = window.CurrentItems;
-        
-        itemsToProcess.forEach(item => {
-            
-            // ข้าม Money/Gold
-            if (item.type === "item_money" || item.type === "item_gold") return; 
-
-            // Get metadata required for filtering
-            const itemLabel = getItemMetadataInfo(item, false).label.toLowerCase(); 
-            // [FIX] ใช้ Number(item.group) เพื่อแก้ปัญหา String/Number Mismatch
-            const numGroup = item.type != "item_weapon" ? (!item.group ? 1 : Number(item.group)) : 5; 
-            
-            // Check Tab Match
-            let matchesTab = false;
-            if (isFavoriteTab) {
-                matchesTab = favoriteItems.includes(item.name);
-            } else {
-                matchesTab = itemTypesToShow.includes(numGroup);
-            }
-
-            // Check Search Match
-            let matchesSearch = itemLabel.includes(searchText);
-
-            // Final Condition
-            let shouldShow = matchesTab;
-            if (isSearchActive) {
-                shouldShow = matchesTab && matchesSearch;
-            }
-            
-            // 4. ถ้า Item ตรงตามเงื่อนไข ให้วาดใหม่
-            if (shouldShow) {
-                // loadInventoryItem function appends to container and calls addData (event binding)
-                // itemDiv เป็น index ที่ปลอดภัยสำหรับการวาดใหม่
-                if (loadInventoryItem(item, itemDiv)) {
-                    itemDiv++;
-                }
-            }
-        });
-    }
+    const isFavoriteTab = itemTypesToShow.includes("favorites");
     
-    // 5. เติมช่องว่าง (Empty Slots)
+    const matchingItems = []; // Items ที่จะแสดง
+    const nonMatchingItems = []; // Items ที่จะซ่อน
+
+    // 3. กรองและจัดกลุ่ม items (ไม่ทำการ show/hide ในขั้นตอนนี้)
+    container.find('.item-card').each(function () {
+        const itemCard = $(this);
+        const group = itemCard.data("group"); 
+        const itemName = itemCard.data("name"); 
+        const itemLabel = itemCard.data("label") ? itemCard.data("label").toLowerCase() : "";
+        const numGroup = Number(group); 
+
+        // ข้ามช่องว่าง
+        if (numGroup === 0) {
+            return; 
+        }
+
+        // --- Logic สำหรับไอเท็มจริง (numGroup > 0) ---
+        let matchesTab = isFavoriteTab 
+            ? favoriteItems.includes(itemName)
+            : itemTypesToShow.includes(numGroup);
+        
+        let matchesSearch = itemLabel.includes(searchText);
+
+        // 4. ตรวจสอบเงื่อนไขการแสดง
+        let shouldShow = matchesTab;
+        if (isSearchActive) {
+            shouldShow = matchesTab && matchesSearch;
+        }
+
+        // 5. จัดกลุ่ม
+        if (shouldShow) {
+            matchingItems.push(itemCard); 
+            itemDiv++;
+        } else {
+            nonMatchingItems.push(itemCard); 
+        }
+    });
+    
+    // 6. จัดเรียง DOM ใหม่ทั้งหมด
+    // ดึงไอเท็มทั้งหมดออกจาก Container
+    container.find('.item-card').detach(); 
+    
+    // 7. Append และแสดงไอเท็มที่ Match ก่อน
+    // ไอเท็มที่ Match จะถูกนำกลับเข้า DOM เท่านั้น
+    matchingItems.forEach(item => container.append(item.show()));
+    
+    // [FIXED] ไม่มีการ Append nonMatchingItems กลับเข้าไปใน DOM
+    // ซึ่งทำให้ Item ที่ไม่ตรงตามเงื่อนไขถูกลบออกจาก DOM โดยสมบูรณ์
+
+    // 8. เติมช่องว่าง (Empty Slots)
     const minSlots = 40;
     if (itemDiv < minSlots) { 
         const emptySlots = minSlots - itemDiv;
@@ -472,12 +461,12 @@ function addData(index, item) {
 /**
  * [HEAVILY MODIFIED] ฟังก์ชันหลักในการวาด Inventory
  */
-/**
- * [FINAL FIXED] ฟังก์ชันหลักในการวาด Inventory (แก้ไขการเก็บรายการที่เรียงแล้ว)
- */
 function inventorySetup(items, activeTab) { // รับ activeTab เข้ามา
     $("#inventoryElement").html("");
     let divAmount = 0; 
+
+    // 0. เก็บรายการไอเท็มทั้งหมดไว้ในตัวแปร Global
+    window.CurrentItems = items; 
 
     // 1. แยกรายการไอเท็มเป็น Favorites และ Non-Favorites
     let favoriteItemsList = [];
@@ -498,9 +487,6 @@ function inventorySetup(items, activeTab) { // รับ activeTab เข้า�
     // 2. เรียงลำดับใหม่
     const sortedItems = [...favoriteItemsList, ...nonFavoriteItemsList];
     
-    // [CRITICAL FIX] เก็บรายการที่เรียงแล้วไว้ในตัวแปร Global
-    window.CurrentItems = sortedItems; 
-
     // 3. วาดไอเท็มตามลำดับใหม่
     if (sortedItems.length > 0) {
         for (const [index, item] of sortedItems.entries()) {
