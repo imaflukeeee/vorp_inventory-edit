@@ -285,7 +285,7 @@ function loadInventoryItem(item, index) {
             
             ${qtyDisplay ? `<p class="item-qty">${qtyDisplay}</p>` : ""}
 
-            <div class="favorite-icon" style="display: ${favDisplay}; position: absolute; top: 2px; right: 2px; z-index: 10;">
+            <div class="favorite-icon" style="display: ${favDisplay}; position: absolute; top: 2px; right: 4px; z-index: 10;">
                 <img src="img/itemtypes/favorite-mark.png" style="width: 12px; height: 12px;">
             </div>
 
@@ -423,47 +423,74 @@ function addData(index, item) {
 
         const name = item.name;
         const idx = favoriteItems.indexOf(name);
-        // ใช้ .find('.favorite-icon') เพื่ออ้างอิงถึงไอคอนที่เพิ่มใน loadInventoryItem
         const favIcon = $(this).find('.favorite-icon'); 
 
         if (idx > -1) {
-            // ถ้ามีอยู่แล้ว ให้ลบออก
             favoriteItems.splice(idx, 1);
             favIcon.hide();
         } else {
-            // ถ้ายังไม่มี ให้เพิ่มเข้าไป
             favoriteItems.push(name);
             favIcon.show();
         }
-        updateFavoritesStorage(); // บันทึกลง LocalStorage
+        updateFavoritesStorage(); 
 
-        // ถ้ากำลังเปิดหน้า Favorites อยู่ ให้รีเฟรชหน้า
+        // [MODIFIED] 1. ดึงค่าแท็บที่กำลังเปิดอยู่
         const activeTab = $('#inventoryHud .tab.active').data('param');
-        if (activeTab === 'favorites') {
-             action('itemtype', 'favorites', 'inventoryElement');
+
+        // [MODIFIED] 2. สั่งวาดใหม่ และส่งค่า activeTab ที่ดึงมา
+        if (window.CurrentItems) {
+            inventorySetup(window.CurrentItems, activeTab); 
         }
     });
 }
 
-
 /**
  * [HEAVILY MODIFIED] ฟังก์ชันหลักในการวาด Inventory
  */
-function inventorySetup(items) {
+function inventorySetup(items, activeTab) { // รับ activeTab เข้ามา
     $("#inventoryElement").html("");
     let divAmount = 0; 
 
+    // 0. เก็บรายการไอเท็มทั้งหมดไว้ในตัวแปร Global
+    window.CurrentItems = items; 
+
+    // 1. แยกรายการไอเท็มเป็น Favorites และ Non-Favorites
+    let favoriteItemsList = [];
+    let nonFavoriteItemsList = [];
+
     if (items.length > 0) {
-        for (const [index, item] of items.entries()) {
+        for (const item of items) {
             if (item) {
-                if (loadInventoryItem(item, index)) {
+                if (favoriteItems.includes(item.name)) {
+                    favoriteItemsList.push(item);
+                } else {
+                    nonFavoriteItemsList.push(item);
+                }
+            }
+        }
+    }
+
+    // 2. เรียงลำดับใหม่
+    const sortedItems = [...favoriteItemsList, ...nonFavoriteItemsList];
+    
+    // 3. วาดไอเท็มตามลำดับใหม่
+    if (sortedItems.length > 0) {
+        for (const [index, item] of sortedItems.entries()) {
+            if (item) {
+                if (loadInventoryItem(item, index)) { 
                     divAmount++;
                 }
             }
         };
     }
-    action('itemtype', 'all', 'inventoryElement');
+
+    // [MODIFIED] กำหนด Tab ที่จะ Activate: ใช้ค่าที่ส่งมา ถ้าไม่มีให้ใช้ 'all'
+    const tabToActivate = activeTab || 'all'; 
+    action('itemtype', tabToActivate, 'inventoryElement'); 
+
     // [ADD-REVISED] ผูก Logic ไอเท็มพิเศษ (Gunbelt, Money, Gold)
+    // ... (โค้ดส่วนนี้เป็นโค้ดเดิม) ...
+
     const gunbelt_label = LANGUAGE.gunbeltlabel;
     const gunbelt_desc = LANGUAGE.gunbeltdescription;
     var dataAmmo = []; 
@@ -520,15 +547,6 @@ function inventorySetup(items) {
             giveGetHowManyMoney(); 
         },
     });
-    // [REMOVED] (ข้อ 11) ลบปุ่ม Drop Money
-    /*
-    dataMoney.push({
-        text: LANGUAGE.dropmoney,
-        action: function () {
-            dropGetHowMany(m_item, "item_money", "asd", 0); 
-        },
-    });
-    */
 
     // [FIX] ITEM พิเศษ: Money
     $("#cash").show(); 
@@ -558,15 +576,6 @@ function inventorySetup(items) {
             giveGetHowManyGold(); 
         },
     });
-    // [REMOVED] (ข้อ 11) ลบปุ่ม Drop Gold
-    /*
-    dataGold.push({
-        text: LANGUAGE.dropgold,
-        action: function () {
-            dropGetHowMany(g_item, "item_gold", "asd", 0); 
-        },
-    });
-    */
 
     $("#gold").show(); 
     if (Config.AddGoldItem) {
