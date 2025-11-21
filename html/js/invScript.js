@@ -286,7 +286,7 @@ function loadInventoryItem(item, index) {
             ${qtyDisplay ? `<p class="item-qty">${qtyDisplay}</p>` : ""}
 
             <div class="favorite-icon" style="display: ${favDisplay}; position: absolute; top: 2px; right: 2px; z-index: 10;">
-                <img src="img/itemtypes/favorite.png" style="width: 12px; height: 12px;">
+                <img src="img/itemtypes/favorite-mark.png" style="width: 12px; height: 12px;">
             </div>
 
             <p class="item-name">${label}</p>
