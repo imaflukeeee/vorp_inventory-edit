@@ -117,13 +117,26 @@ function loadActionsConfig() {
 /**
  * [FIXED] สร้างปุ่ม Filter (Tabs) - (ใช้ 6 หมวดหมู่ใหม่ + Icons และเรียงตามลำดับ)
  */
+/**
+ * [FINAL FIXED] สร้างปุ่ม Filter (Tabs) - ไม่สร้างปุ่มสำหรับ Secondary Inventory
+ */
 function generateActionButtons(actionsConfig, containerId, inventoryContext, buttonClass) {
     const container = document.getElementById(containerId);
 
+    // [CRITICAL FIX] ถ้า Context คือ Secondary Inventory ให้ล้าง Container และหยุดทำงานทันที
+    if (inventoryContext === 'secondInventoryElement') {
+        if (container) {
+            container.innerHTML = ''; // ล้างปุ่มทั้งหมด
+        }
+        return; // หยุดการสร้างปุ่ม
+    }
+
+    // โค้ดเดิมสำหรับ Main Inventory
     if (container) {
         container.innerHTML = ''; 
         
-        // [NEW] กำหนดลำดับคีย์ (Tabs) ที่ต้องการตาม groups.lua
+        // [MODIFIED] ใช้อาร์เรย์ desiredOrder ในการวนซ้ำแทน Object.keys()
+        // Note: โค้ดนี้ถูกปรับให้รวม Logic การเรียงลำดับที่คุณเคยทำไว้
         const desiredOrder = [
             "all",
             "food",
@@ -132,14 +145,12 @@ function generateActionButtons(actionsConfig, containerId, inventoryContext, but
             "tools",
             "etc",
             "apparel",
-            "favorites" // หมวดหมู่ Favorites ที่เพิ่มล่าสุด
+            "favorites" 
         ];
 
-        // [MODIFIED] ใช้อาร์เรย์ desiredOrder ในการวนซ้ำแทน Object.keys()
         desiredOrder.forEach(key => {
             const action = actionsConfig[key];
             
-            // ตรวจสอบว่า action นั้นมีอยู่ใน actionsConfig จริง
             if (!action) return; 
 
             const button = document.createElement('button');
@@ -172,10 +183,16 @@ function action(type, param, inv) {
         const hudId = (inv === "inventoryElement") ? '#inventoryHud' : '#secondInventoryHud';
         
         document.querySelectorAll(`${hudId} .tab[data-type="itemtype"]`).forEach(btn => btn.classList.remove('active'));
+        
+        // [CRITICAL FIX] ถ้าทำงานในหน้าต่างรอง ให้บังคับพารามิเตอร์เป็น 'all' เสมอ
+        if (inv === "secondInventoryElement") {
+            param = 'all'; 
+        }
+
         const activeButton = document.querySelector(`${hudId} .tab[data-param="${param}"][data-type="itemtype"]`);
         if (activeButton) activeButton.classList.add('active');
 
-        // [FIXED] ต้องเรียก showItemsByType ตรงนี้
+        // เรียก showItemsByType โดยใช้ Logic ของ 'all' เมื่ออยู่ในหน้าต่างรอง
         if (param in Actions) {
             const action = Actions[param];
             showItemsByType(action.types, inv);
@@ -184,7 +201,6 @@ function action(type, param, inv) {
             showItemsByType(defaultAction.types, inv);
         }
     } 
-    // ... (ส่วนอื่น ๆ ของ action function ถ้ามี)
 }
 
 /**
