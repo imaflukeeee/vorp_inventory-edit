@@ -165,7 +165,7 @@ function generateActionButtons(actionsConfig, containerId, inventoryContext, but
 }
 
 /**
- * [MODIFIED] จัดการการคลิก Tab
+ * [FINAL FIXED] กรองไอเท็ม (ลบไอเท็มที่ไม่ตรงออกไปจาก DOM เมื่อมีการค้นหา)
  */
 function action(type, param, inv) {
     if (type === 'itemtype') {
@@ -188,64 +188,72 @@ function action(type, param, inv) {
 }
 
 /**
- * [MODIFIED] กรองไอเท็ม (ใช้ .item-card)
- */
-/**
- * [FINAL FIXED] กรองไอเท็ม (ใช้ .item-card)
- */
-/**
- * [FINAL FIXED] กรองไอเท็ม (ใช้ .item-card)
+ * [FINAL FIXED] กรองไอเท็ม (Aggressive Rerender - แก้ปัญหาช่องว่างจากการค้นหา)
  */
 function showItemsByType(itemTypesToShow, inv) {
-    let itemDiv = 0;
     
-    // 1. ลบช่องว่างเก่าทั้งหมดออกก่อนเสมอ
-    $(`#${inv} .item-card[data-group="0"]`).remove();
-    
+    // 1. ตรวจสอบสถานะการค้นหา
     let searchInputId = (inv === "inventoryElement") ? "#main-search" : "#second-search";
     let searchText = $(searchInputId).val().toLowerCase().trim();
     
+    const isSearchActive = searchText.length > 0;
     const isFavoriteTab = itemTypesToShow.includes("favorites");
+    const container = $(`#${inv}`);
 
-    $(`#${inv} .item-card`).each(function () {
-        const itemCard = $(this);
-        const group = itemCard.data("group"); 
-        const itemName = itemCard.data("name"); 
-        const itemLabel = itemCard.data("label") ? itemCard.data("label").toLowerCase() : "";
-        const numGroup = Number(group); 
+    // 2. [AGGRESSIVE RESET] ล้าง DOM ทั้งหมด
+    container.html(''); 
 
-        // 2. ข้าม/ซ่อน ช่องว่างเก่าที่อาจหลงเหลือ
-        if (numGroup === 0) {
-            itemCard.hide(); 
-            return; 
-        }
+    let itemDiv = 0;
+    
+    // 3. กรองและวาดใหม่จากข้อมูลที่เรียงแล้ว (window.CurrentItems)
+    if (window.CurrentItems && window.CurrentItems.length > 0) {
+        
+        const itemsToProcess = window.CurrentItems;
+        
+        itemsToProcess.forEach(item => {
+            
+            // ข้าม Money/Gold
+            if (item.type === "item_money" || item.type === "item_gold") return; 
 
-        // --- Logic สำหรับไอเท็มจริง (numGroup > 0) ---
-        let matchesTab = false;
-        if (isFavoriteTab) {
-            matchesTab = favoriteItems.includes(itemName);
-        } else {
-            matchesTab = itemTypesToShow.includes(numGroup);
-        }
+            // Get metadata required for filtering
+            const itemLabel = getItemMetadataInfo(item, false).label.toLowerCase(); 
+            // [FIX] ใช้ Number(item.group) เพื่อแก้ปัญหา String/Number Mismatch
+            const numGroup = item.type != "item_weapon" ? (!item.group ? 1 : Number(item.group)) : 5; 
+            
+            // Check Tab Match
+            let matchesTab = false;
+            if (isFavoriteTab) {
+                matchesTab = favoriteItems.includes(item.name);
+            } else {
+                matchesTab = itemTypesToShow.includes(numGroup);
+            }
 
-        let matchesSearch = itemLabel.includes(searchText);
+            // Check Search Match
+            let matchesSearch = itemLabel.includes(searchText);
 
-        // 3. แสดง/ซ่อน
-        if (matchesTab && matchesSearch) {
-            itemCard.show();
-            itemDiv = itemDiv + 1;
-        } else {
-            itemCard.hide();
-        }
-    });
-
-    // [FINAL FIX] เติมช่องว่าง (Empty Slots) เพื่อสร้าง Grid Layout
+            // Final Condition
+            let shouldShow = matchesTab;
+            if (isSearchActive) {
+                shouldShow = matchesTab && matchesSearch;
+            }
+            
+            // 4. ถ้า Item ตรงตามเงื่อนไข ให้วาดใหม่
+            if (shouldShow) {
+                // loadInventoryItem function appends to container and calls addData (event binding)
+                // itemDiv เป็น index ที่ปลอดภัยสำหรับการวาดใหม่
+                if (loadInventoryItem(item, itemDiv)) {
+                    itemDiv++;
+                }
+            }
+        });
+    }
+    
+    // 5. เติมช่องว่าง (Empty Slots)
     const minSlots = 40;
-    // [แก้ไข]: ลบเงื่อนไข !isFavoriteTab ออก เพื่อให้ช่องว่างถูกสร้างเสมอ (สำหรับ Layout)
     if (itemDiv < minSlots) { 
         const emptySlots = minSlots - itemDiv;
         for (let i = 0; i < emptySlots; i++) {
-            $(`#${inv}`).append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
+            container.append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
         }
     }
 }
@@ -448,12 +456,12 @@ function addData(index, item) {
 /**
  * [HEAVILY MODIFIED] ฟังก์ชันหลักในการวาด Inventory
  */
+/**
+ * [FINAL FIXED] ฟังก์ชันหลักในการวาด Inventory (แก้ไขการเก็บรายการที่เรียงแล้ว)
+ */
 function inventorySetup(items, activeTab) { // รับ activeTab เข้ามา
     $("#inventoryElement").html("");
     let divAmount = 0; 
-
-    // 0. เก็บรายการไอเท็มทั้งหมดไว้ในตัวแปร Global
-    window.CurrentItems = items; 
 
     // 1. แยกรายการไอเท็มเป็น Favorites และ Non-Favorites
     let favoriteItemsList = [];
@@ -474,6 +482,9 @@ function inventorySetup(items, activeTab) { // รับ activeTab เข้า�
     // 2. เรียงลำดับใหม่
     const sortedItems = [...favoriteItemsList, ...nonFavoriteItemsList];
     
+    // [CRITICAL FIX] เก็บรายการที่เรียงแล้วไว้ในตัวแปร Global
+    window.CurrentItems = sortedItems; 
+
     // 3. วาดไอเท็มตามลำดับใหม่
     if (sortedItems.length > 0) {
         for (const [index, item] of sortedItems.entries()) {
@@ -624,6 +635,7 @@ function inventorySetup(items, activeTab) { // รับ activeTab เข้า�
             revert: 'invalid',
             cursor: 'move',
             cursorAt: { top: 35, left: 35 },
+            containment: 'document',
             start: function (event, ui) {
                 if (disabled) return false;
                 stopTooltip = true;
