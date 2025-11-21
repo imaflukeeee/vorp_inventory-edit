@@ -126,6 +126,7 @@ function generateActionButtons(actionsConfig, containerId, inventoryContext, but
         // [NEW] กำหนดลำดับคีย์ (Tabs) ที่ต้องการตาม groups.lua
         const desiredOrder = [
             "all",
+            "food",
             "consumables",
             "weapons",
             "tools",
