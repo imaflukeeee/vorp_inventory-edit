@@ -344,7 +344,6 @@ function secondInventorySetup(items, info) {
         revert: 'invalid',
         cursor: 'move',
         cursorAt: { top: 35, left: 35 },
-        containment: 'window',
         start: function (event, ui) {
             if (disabled) return false;
             stopTooltip = true;

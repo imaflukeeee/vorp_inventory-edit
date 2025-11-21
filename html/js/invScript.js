@@ -635,7 +635,6 @@ function inventorySetup(items, activeTab) { // รับ activeTab เข้า�
             revert: 'invalid',
             cursor: 'move',
             cursorAt: { top: 35, left: 35 },
-            containment: 'document',
             start: function (event, ui) {
                 if (disabled) return false;
                 stopTooltip = true;
