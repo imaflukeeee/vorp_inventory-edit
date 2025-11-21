@@ -249,7 +249,7 @@ function showItemsByType(itemTypesToShow, inv) {
     if (inv === "inventoryElement") {
         $('#inventoryElement .item-card[data-inventory="main"]').draggable({
             helper: function() {
-                const itemImg = $(this).find('img').clone();
+                const itemImg = $(this).find('> img').clone(); 
                 const helperDiv = $('<div class="drag-helper"></div>');
                 helperDiv.append(itemImg);
                 return helperDiv;
@@ -569,7 +569,7 @@ function inventorySetup(items, activeTab) {
     if (type != "main") {
         $('#inventoryElement .item-card[data-inventory="main"]').draggable({
             helper: function() {
-                const itemImg = $(this).find('img').clone();
+                const itemImg = $(this).find('> img').clone(); 
                 const helperDiv = $('<div class="drag-helper"></div>');
                 helperDiv.append(itemImg);
                 return helperDiv;
