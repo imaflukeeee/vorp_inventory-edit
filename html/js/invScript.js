@@ -165,7 +165,7 @@ function generateActionButtons(actionsConfig, containerId, inventoryContext, but
 }
 
 /**
- * [FINAL FIXED] กรองไอเท็ม (ลบไอเท็มที่ไม่ตรงออกไปจาก DOM เมื่อมีการค้นหา)
+ * [MODIFIED] จัดการการคลิก Tab
  */
 function action(type, param, inv) {
     if (type === 'itemtype') {
@@ -190,75 +190,62 @@ function action(type, param, inv) {
 /**
  * [MODIFIED] กรองไอเท็ม (ใช้ .item-card)
  */
+/**
+ * [FINAL FIXED] กรองไอเท็ม (ใช้ .item-card)
+ */
+/**
+ * [FINAL FIXED] กรองไอเท็ม (ใช้ .item-card)
+ */
 function showItemsByType(itemTypesToShow, inv) {
     let itemDiv = 0;
     
-    // 1. ตรวจสอบสถานะการค้นหา
+    // 1. ลบช่องว่างเก่าทั้งหมดออกก่อนเสมอ
+    $(`#${inv} .item-card[data-group="0"]`).remove();
+    
     let searchInputId = (inv === "inventoryElement") ? "#main-search" : "#second-search";
     let searchText = $(searchInputId).val().toLowerCase().trim();
-    const isSearchActive = searchText.length > 0;
-    
-    // 2. ลบช่องว่างเก่าทั้งหมดออกก่อนเสมอ
-    const container = $(`#${inv}`);
-    container.find('.item-card[data-group="0"]').remove();
     
     const isFavoriteTab = itemTypesToShow.includes("favorites");
-    
-    const matchingItems = []; // Items ที่จะแสดง
-    const nonMatchingItems = []; // Items ที่จะซ่อน
 
-    // 3. กรองและจัดกลุ่ม items (ไม่ทำการ show/hide ในขั้นตอนนี้)
-    container.find('.item-card').each(function () {
+    $(`#${inv} .item-card`).each(function () {
         const itemCard = $(this);
         const group = itemCard.data("group"); 
         const itemName = itemCard.data("name"); 
         const itemLabel = itemCard.data("label") ? itemCard.data("label").toLowerCase() : "";
         const numGroup = Number(group); 
 
-        // ข้ามช่องว่าง
+        // 2. ข้าม/ซ่อน ช่องว่างเก่าที่อาจหลงเหลือ
         if (numGroup === 0) {
+            itemCard.hide(); 
             return; 
         }
 
         // --- Logic สำหรับไอเท็มจริง (numGroup > 0) ---
-        let matchesTab = isFavoriteTab 
-            ? favoriteItems.includes(itemName)
-            : itemTypesToShow.includes(numGroup);
-        
+        let matchesTab = false;
+        if (isFavoriteTab) {
+            matchesTab = favoriteItems.includes(itemName);
+        } else {
+            matchesTab = itemTypesToShow.includes(numGroup);
+        }
+
         let matchesSearch = itemLabel.includes(searchText);
 
-        // 4. ตรวจสอบเงื่อนไขการแสดง
-        let shouldShow = matchesTab;
-        if (isSearchActive) {
-            shouldShow = matchesTab && matchesSearch;
-        }
-
-        // 5. จัดกลุ่ม
-        if (shouldShow) {
-            matchingItems.push(itemCard); 
-            itemDiv++;
+        // 3. แสดง/ซ่อน
+        if (matchesTab && matchesSearch) {
+            itemCard.show();
+            itemDiv = itemDiv + 1;
         } else {
-            nonMatchingItems.push(itemCard); 
+            itemCard.hide();
         }
     });
-    
-    // 6. จัดเรียง DOM ใหม่ทั้งหมด
-    // ดึงไอเท็มทั้งหมดออกจาก Container
-    container.find('.item-card').detach(); 
-    
-    // 7. Append และแสดงไอเท็มที่ Match ก่อน
-    // ไอเท็มที่ Match จะถูกนำกลับเข้า DOM เท่านั้น
-    matchingItems.forEach(item => container.append(item.show()));
-    
-    // [FIXED] ไม่มีการ Append nonMatchingItems กลับเข้าไปใน DOM
-    // ซึ่งทำให้ Item ที่ไม่ตรงตามเงื่อนไขถูกลบออกจาก DOM โดยสมบูรณ์
 
-    // 8. เติมช่องว่าง (Empty Slots)
+    // [FINAL FIX] เติมช่องว่าง (Empty Slots) เพื่อสร้าง Grid Layout
     const minSlots = 40;
+    // [แก้ไข]: ลบเงื่อนไข !isFavoriteTab ออก เพื่อให้ช่องว่างถูกสร้างเสมอ (สำหรับ Layout)
     if (itemDiv < minSlots) { 
         const emptySlots = minSlots - itemDiv;
         for (let i = 0; i < emptySlots; i++) {
-            container.append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
+            $(`#${inv}`).append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
         }
     }
 }
