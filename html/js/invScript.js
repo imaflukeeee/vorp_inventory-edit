@@ -115,16 +115,32 @@ function loadActionsConfig() {
 }
 
 /**
- * [MODIFIED] สร้างปุ่ม Filter (Tabs) - (ใช้ 6 หมวดหมู่ใหม่ + Icons)
+ * [FIXED] สร้างปุ่ม Filter (Tabs) - (ใช้ 6 หมวดหมู่ใหม่ + Icons และเรียงตามลำดับ)
  */
 function generateActionButtons(actionsConfig, containerId, inventoryContext, buttonClass) {
     const container = document.getElementById(containerId);
 
     if (container) {
         container.innerHTML = ''; 
+        
+        // [NEW] กำหนดลำดับคีย์ (Tabs) ที่ต้องการตาม groups.lua
+        const desiredOrder = [
+            "all",
+            "consumables",
+            "weapons",
+            "tools",
+            "etc",
+            "apparel",
+            "favorites" // หมวดหมู่ Favorites ที่เพิ่มล่าสุด
+        ];
 
-        Object.keys(actionsConfig).forEach(key => {
+        // [MODIFIED] ใช้อาร์เรย์ desiredOrder ในการวนซ้ำแทน Object.keys()
+        desiredOrder.forEach(key => {
             const action = actionsConfig[key];
+            
+            // ตรวจสอบว่า action นั้นมีอยู่ใน actionsConfig จริง
+            if (!action) return; 
+
             const button = document.createElement('button');
             button.className = buttonClass; 
             button.type = 'button';
