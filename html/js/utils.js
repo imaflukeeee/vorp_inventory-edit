@@ -70,7 +70,7 @@ function secondarySetCurrentCapacity(cap, weight) {
         capacityElement.show();
     } else {
         // แสดงแค่จำนวน slots ที่ใช้ (ถ้าไม่มีข้อมูล max capacity)
-        capacityText.html(`${usedSlots} Slots`);
+        capacityText.html(`${usedSlots} ช่อง`);
         capacityElement.show();
     }
 }
