@@ -220,8 +220,10 @@ body {
 /* --- 5. ITEM GRID & SCROLLBAR --- */
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); 
-  gap: 15px; 
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 10px; 
   min-height: 480px; 
   max-height: 480px; 
   overflow-y: auto;
@@ -243,7 +245,8 @@ body {
   cursor: pointer;
   transition: var(--transition);
   position: relative;
-  aspect-ratio: 1 / 1; 
+  width: 100%; 
+  aspect-ratio: 1 / 1; /* สี่เหลี่ยมจัตุรัส */
   display: flex;
   flex-direction: column;
   justify-content: flex-start; /* [MODIFIED] (ข้อ 1) เปลี่ยนจาก center เป็น flex-start */
@@ -727,4 +730,19 @@ body {
     outline: none;
     transition: opacity .2s;
     cursor: pointer;
+}
+
+/* 1. ซ่อนปุ่มฝั่งขวาแบบลบพื้นที่ทิ้งไปเลย (เพื่อให้ไอเท็มขยับขึ้นไปด้านบน ไม่โหว่) */
+#secondInventoryHud .inventory-controls {
+    display: none !important;
+}
+#secondInventoryHud .inventory-tabs {
+    display: none !important;
+}
+
+/* 2. กำหนดขนาดความสูงของตาราง (Grid) ฝั่งขวาใหม่ ชดเชยพื้นที่ปุ่มที่หายไป */
+#secondInventoryHud .inventory-grid {
+    /* ของเดิมฝั่งซ้ายสูง 480px เราบวกเพิ่มไปประมาณ 70-80px จากพื้นที่ปุ่ม */
+    min-height: 570px !important; 
+    max-height: 570px !important; 
 }

@@ -1,9 +1,3 @@
-/* =================================
-  SECONDARY INVENTORY SCRIPT (MODIFIED)
-  =================================
-*/
-
-// (Logic เดิม - ใช้สำหรับส่งข้อมูลกลับไป LUA)
 function PostActionPostQty(eventName, itemData, id, propertyName, qty, info) {
     if (isValidating) return;
     processEventValidation();
@@ -18,12 +12,10 @@ function PostActionPostQty(eventName, itemData, id, propertyName, qty, info) {
     );
 }
 
-// (Logic เดิม - ตรวจสอบ Shift Key)
 let isShiftActive = false
 document.onkeydown = function (e) { isShiftActive = e.shiftKey };
 document.onkeyup = function (e) { isShiftActive = e.shiftKey };
 
-// (Logic เดิม - จัดการการย้าย/ดึง ไอเท็ม)
 function PostAction(eventName, itemData, id, propertyName, info) {
     disableInventory(500);
     if (itemData.type != "item_weapon") {
@@ -56,7 +48,6 @@ function PostAction(eventName, itemData, id, propertyName, info) {
     }
 }
 
-// (Logic เดิม - ไม่แก้ไข)
 const ActionTakeList = {
     custom: { action: "TakeFromCustom", id: () => customId, customtype: "id" },
     player: { action: "TakeFromPlayer", id: () => playerId, customtype: "player" },
@@ -88,15 +79,10 @@ function takeFromStoreWithPrice(itemData, qty) {
         item: itemData, type: itemData.type, number: qty, price: itemData.price, geninfo: geninfo, store: StoreId,
     }));
 }
-// (สิ้นสุด Logic เดิม - ไม่แก้ไข)
 
 
-/**
- * [MODIFIED] ฟังก์ชันนี้จะจัดการการ "วาง" ไอเท็มลงในหน้าต่าง
- */
 function initSecondaryInventoryHandlers() {
     
-    // Logic Droppable ของหน้าต่างหลัก
     $("#inventoryElement").droppable({
         accept: '.item-card[data-inventory="second"]',
         tolerance: 'pointer',
@@ -139,7 +125,6 @@ function initSecondaryInventoryHandlers() {
         },
     });
 
-    // (Logic เดิม)
     function moveToStore(itemData, qty) {
         if (isValidating) return;
         processEventValidation();
@@ -167,7 +152,6 @@ function initSecondaryInventoryHandlers() {
         });
     }
 
-    // Logic Droppable ของหน้าต่างรอง
     $("#secondInventoryElement").droppable({
         accept: '.item-card[data-inventory="main"]',
         tolerance: 'pointer',
@@ -210,33 +194,21 @@ function initSecondaryInventoryHandlers() {
     });
 }
 
-/**
- * [MODIFIED] ผูก Event ให้ไอเท็ม (หน้าต่างรอง)
- */
 function addDataToCustomInv(item, index) {
     const itemElement = $("#item-" + index);
 
     itemElement.data("item", item);
     itemElement.data("inventory", "second"); 
 
-    // [REMOVED] (ข้อ 1) ลบ on('mouseenter') ออก
-    /*
-    itemElement.on('mouseenter', () => {
-        // ...
-    });
-    */
-
     itemElement.on('mouseleave', () => {
         /* ไม่ต้องลบออก */
     });
 
-    // [MODIFIED] (ข้อ 1 & 2)
     itemElement.on('click', function() {
         $('#secondInventoryHud .item-card').removeClass('active');
         $(this).addClass('active');
 
-        // [MODIFIED] (ข้อ 2) เพิ่ม Serial Number ลงใน Description
-        let { label, description } = getItemMetadataInfo(item, true); // true = custom
+        let { label, description } = getItemMetadataInfo(item, true); 
         if (item.type == "item_weapon" && item.serial_number) {
             description += `<br><span class="serial-number">Serial: ${item.serial_number}</span>`;
         }
@@ -249,44 +221,31 @@ function addDataToCustomInv(item, index) {
     });
 }
 
-/**
- * [ADD-REVISED] (แก้ Bug "ไม่เห็นไอเท็ม") เพิ่มฟังก์ชันที่ขาดหายไป
- */
 function getDegradationCustom(item) {
     if (item.type === "item_weapon" || item.degradation === undefined || item.degradation === null || item.percentage === undefined || item.percentage === null) return "";
     const degradationPercentage = item.percentage
-    const color = getColorForDegradation(degradationPercentage); // (ฟังก์ชันนี้อยู่ใน utils.js)
+    const color = getColorForDegradation(degradationPercentage); 
     return `<br>${LANGUAGE.labels.decay}<span style="color: ${color}">${degradationPercentage.toFixed(0)}%</span>`;
 }
 
-
-/**
- * [MODIFIED] สร้างไอเท็ม 1 ชิ้น (สำหรับหน้าต่างรอง) (ข้อ 5, 6, 7, 9)
- * @returns {boolean} - คืนค่า true (สำหรับนับจำนวน)
- */
 function loadCustomInventoryItem(item, index) {
     const count = item.count;
-    const limit = item.limit; // [MODIFIED] (ข้อ 7)
+    const limit = item.limit; 
     const group = item.type != "item_weapon" ? (!item.group ? 1 : item.group) : 5;
 
-    const { tooltipData, degradation, image, label, weight, description } = getItemMetadataInfo(item, true); // true = custom
+    const { tooltipData, degradation, image, label, weight, description } = getItemMetadataInfo(item, true); 
 
     const imageUrl = imageCache[image] || 'img/items/placeholder.png';
-    // const itemWeight = (weight * count).toFixed(2); // [REMOVED] (ข้อ 6)
-
-    // [MODIFIED] (ข้อ 7 & 9) - เพิ่มการแสดง 'x1' สำหรับอาวุธ
+    
     let qtyDisplay = "";
     if (item.type == "item_weapon") {
         qtyDisplay = "x1";
-    } else if (limit > 0) { // Stackable
-        //qtyDisplay = `${count} / ${limit}`;
+    } else if (limit > 0) { 
         qtyDisplay = `${count}`;
-    } else if (count > 1) { // Non-stackable
+    } else if (count > 1) { 
         qtyDisplay = `x${count}`;
     }
-    // ถ้า count <= 1 (สำหรับ item ทั่วไป) qtyDisplay จะยังคงเป็น "" (ไม่แสดงผล)
 
-    // [MODIFIED] (ข้อ 5, 6, 7, 9)
     const itemHtml = `
         <div class="item-card" id="item-${index}" data-group='${group}' data-label='${label}' data-inventory="second">
             <img src="${imageUrl}" alt="${label}" onerror="fallbackImg(this)">
@@ -297,43 +256,27 @@ function loadCustomInventoryItem(item, index) {
     
     $("#secondInventoryElement").append(itemHtml);
 
-    // ผูก Data
     addDataToCustomInv(item, index);
-    return true; // [FIX] คืนค่า true
+    return true; 
 }
 
-/**
- * [MODIFIED] ฟังก์ชันหลักในการวาด Inventory (หน้าต่างรอง)
- */
 function secondInventorySetup(items, info) {
     $("#inventoryElement").html("");
     $("#secondInventoryElement").html("").data("info", info);
-    var divCount = 0; // [FIX] รีเซ็ตตัวนับ
-
+    CurrentSecondaryItems = items; 
+    var divCount = 0; 
     if (items.length > 0) {
-        // [FIX] แก้ไข Logic การนับ
         for (const [index, item] of items.entries()) {
-            if (item) { // [FIX] ตรวจสอบว่า item ไม่ใช่ nil
-                if (loadCustomInventoryItem(item, index)) { // [FIX] เรียกใช้ฟังก์ชันวาด .item-card ใหม่
+            if (item) {
+                if (item.type === "item_money" || item.type === "item_gold") continue;
+                if (loadCustomInventoryItem(item, index)) { 
                     divCount++;
                 }
             }
         };
     }
-
-    // [MODIFIED] เติมช่องว่าง (ตามที่คุณต้องการ)
-    const minSlots = 40; // [MODIFIED] เปลี่ยนจาก 60 (ไฟล์เก่า) เป็น 40 (ตามที่เคยทำ)
-    if (divCount < minSlots) {
-        var emptySlots = minSlots - divCount;
-        for (var i = 0; i < emptySlots; i++) {
-            $("#secondInventoryElement").append(`<div data-group="0" class="item-card" style="background: var(--bg-card); border: 1px solid var(--border-color); cursor: default; box-shadow: none; user-select: none;"></div>`);
-        }
-    }
-    
-    // [NEW] ตั้งค่า draggable สำหรับ secondary inventory items
     $('#secondInventoryElement .item-card[data-inventory="second"]').draggable({
         helper: function() {
-            // สร้าง helper ที่เป็นแค่รูปภาพ
             const itemImg = $(this).find('img').clone();
             const helperDiv = $('<div class="drag-helper"></div>');
             helperDiv.append(itemImg);
